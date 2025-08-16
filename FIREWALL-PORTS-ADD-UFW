@@ -1,0 +1,47 @@
+
+
+  sudo  systemctl start firewalld 
+sudo  systemctl restart firewalld   
+  
+  sudo firewall-cmd       --permanent      --add-port=30000-33000/tcp 
+
+  sudo firewall-cmd  --permanent       --add-port=6443/tcp 
+  sudo firewall-cmd       --permanent       --add-port=3000/tcp 
+  sudo firewall-cmd    --permanent    --add-port=2379-2380/tcp
+  sudo firewall-cmd    --permanent    --add-port=10259/tcp
+sudo firewall-cmd  --permanent        --add-port=10250/tcp 
+sudo firewall-cmd  --permanent        --add-port=10259/tcp
+ sudo firewall-cmd  --permanent        --add-port=10257/tcp
+sudo firewall-cmd  --permanent        --add-port=10250/tcp
+sudo firewall-cmd  --permanent        --add-port=10256/tcp
+sudo firewall-cmd  --permanent        --add-port=10000-11000/tcp
+
+sudo firewall-cmd  --permanent        --add-port=80/tcp
+sudo firewall-cmd  --permanent        --add-port=8080/tcp
+
+sudo firewall-cmd  --permanent        --add-port=9090/tcp
+sudo firewall-cmd  --permanent        --add-port=9100/tcp
+sudo firewall-cmd  --permanent        --add-port=9093/tcp
+
+sudo ufw allow  9090
+sudo ufw allow  9100
+sudo ufw allow  9093
+ sudo ufw allow  30000/tcp
+  sudo ufw allow 33000/tcp 
+  sudo ufw allow  6443/tcp 
+   sudo ufw allow   3000/tcp 
+    sudo ufw allow  2379/tcp
+    sudo ufw allow  2380/tcp 
+     sudo ufw allow  10259/tcp
+      sudo ufw allow 10250/tcp 
+       sudo ufw allow  10259/tcp  
+        sudo ufw allow 10257/tcp 
+         sudo ufw allow  10250/tcp 
+          sudo ufw allow  10256/tcp 
+      sudo ufw allow      10000/tcp
+      sudo ufw allow  11000/tcp
+
+      sudo ufw allow  80 
+       sudo ufw allow  8080  
+sudo  firewall-cmd --reload
+sudo systemctl daemon-reload
