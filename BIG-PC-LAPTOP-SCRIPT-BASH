@@ -2,7 +2,7 @@
 ======================  big system
 #!/bin/bash
 apt update -y
-  
+  sudo apt install openjdk-21-jdk
    apt install net-tools -y 
   apt install openssh-server -y 
  apt install ssh  -y 
