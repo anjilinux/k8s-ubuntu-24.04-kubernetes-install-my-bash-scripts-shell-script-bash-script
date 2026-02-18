@@ -1,5 +1,5 @@
 
-======================  big system
+##======================  big system
 #!/bin/bash
 apt update -y
   sudo apt install openjdk-21-jdk -y
