@@ -1,5 +1,5 @@
 ## 24.04 UBUNTU
-https://www.cherryservers.com/blog/install-kubernetes-ubuntu
+#https://www.cherryservers.com/blog/install-kubernetes-ubuntu
 
 sudo hostnamectl hostname worker2
 
