@@ -85,9 +85,16 @@ sudo sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 
 sudo sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
- kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/tigera-operator.yaml
+ #kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/tigera-operator.yaml
 
-curl https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/custom-resources.yaml -O
+#curl https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/custom-resources.yaml -O
+
+# download the Tigera Operator manifest
+kubectl create -f  curl -O https://raw.githubusercontent.com/projectcalico/calico/v3.31.3/manifests/tigera-operator.yaml
+
+# download the custom resources manifest
+curl -O https://raw.githubusercontent.com/projectcalico/calico/v3.31.3/manifests/custom-resources.yaml 
+
 
 
 sed -i 's/cidr: 192\.168\.0\.0\/16/cidr: 10.11.0.0\/16/g' custom-resources.yaml
