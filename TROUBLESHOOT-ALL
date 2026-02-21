@@ -1,0 +1,118 @@
+
+kubectl delete installation default
+kubectl delete apiserver default
+kubectl delete namespace tigera-operator
+kubectl delete namespace calico-system
+kubectl get ns
+================
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.31.3/manifests/tigera-operator.yaml
+
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.31.3/manifests/custom-resources.yaml
+
+kubectl get pods -n calico-system
+kubectl get nodes
+==========
+kubectl get installation
+kubectl patch installation default \
+  --type merge \
+  -p '{"metadata":{"finalizers":[]}}'
+
+kubectl delete installation default
+
+kubectl patch goldmane default --type merge -p '{"metadata":{"finalizers":[]}}'
+kubectl patch whiskers default --type merge -p '{"metadata":{"finalizers":[]}}'
+
+kubectl delete goldmane default
+kubectl delete whiskers default
+##############################
+kubectl get installation
+kubectl get goldmane
+kubectl get whiskers
+=============
+kubectl get installation
+kubectl get apiserver
+kubectl get goldmane
+kubectl get whiskers
+
+kubectl patch installation default --type=merge -p '{"metadata":{"finalizers":[]}}'
+
+kubectl patch apiserver default --type=merge -p '{"metadata":{"finalizers":[]}}'
+
+kubectl patch goldmane default --type=merge -p '{"metadata":{"finalizers":[]}}'
+
+kubectl patch whiskers default --type=merge -p '{"metadata":{"finalizers":[]}}'
+
+====================
+kubectl delete installation default
+kubectl delete apiserver default
+kubectl delete goldmane default
+kubectl delete whiskers default
+
+===================
+
+kubectl get installation
+kubectl get apiserver
+kubectl get goldmane
+kubectl get whiskers
+
+kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.31.3/manifests/tigera-operator.yaml
+kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.31.3/manifests/custom-resources.yaml
+
+kubectl delete installation default
+kubectl delete apiserver default
+kubectl delete goldmane default
+kubectl delete whiskers default
+
+kubectl get installation
+kubectl get apiserver
+kubectl get goldmane
+kubectl get whiskers
+
+kubectl patch installation default --type=merge -p '{"metadata":{"finalizers":[]}}'
+kubectl patch apiserver default --type=merge -p '{"metadata":{"finalizers":[]}}'
+kubectl patch goldmane default --type=merge -p '{"metadata":{"finalizers":[]}}'
+kubectl patch whiskers default --type=merge -p '{"metadata":{"finalizers":[]}}'
+
+kubectl get installation
+
+kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.31.3/manifests/tigera-operator.yaml
+kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.31.3/manifests/custom-resources.yaml
+
+kubectl delete installation default
+kubectl delete apiserver default
+kubectl delete goldmane default
+
+kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.31.3/manifests/tigera-operator.yaml
+kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.31.3/manifests/custom-resources.yaml
+kubectl get pods -n tigera-operator
+
+kubectl get installation default -o jsonpath='{.spec.calicoNetwork.ipPools[0].cidr}'
+
+kubectl patch installation default --type merge -p '{
+  "spec": {
+    "calicoNetwork": {
+      "ipPools": [{
+        "cidr": "10.244.0.0/16"
+      }]
+    }
+  }
+}'
+
+kubectl get pods -n calico-system
+
+
+kubectl get installation default -o jsonpath='{.spec.calicoNetwork.ipPools[0].cidr}'
+
+kubectl patch installation default --type merge -p '{
+  "spec": {
+    "calicoNetwork": {
+      "ipPools": [{
+        "cidr": "10.244.0.0/16",
+        "encapsulation": "IPIP",
+        "natOutgoing": "Enabled",
+        "nodeSelector": "all()"
+      }]
+    }
+  }
+}'
+======================================
