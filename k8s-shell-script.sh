@@ -1,7 +1,7 @@
 ## 24.04 UBUNTU
 #https://www.cherryservers.com/blog/install-kubernetes-ubuntu
 
-sudo hostnamectl hostname worker2
+sudo hostnamectl hostname master
 
 set -x
 
@@ -76,24 +76,20 @@ sudo systemctl enable --now kubelet
 
 
 #############  MASTER ONLY MASTER SETUP ###########
+#if single master - using this 
+#sudo kubeadm init --pod-network-cidr=0.244.0.0/16
+# is using multi -controle-plain
+#kubeadm init \
+ # --control-plane-endpoint "192.168.31.67:6443" \
+  #--upload-certs \
+  #--pod-network-cidr=10.244.0.0/16
 
-sudo kubeadm init --pod-network-cidr=10.11.0.0/16 
+  mkdir -p $HOME/.kube
+sudo cp /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
-sudo mkdir -p $HOME/.kube
-
-sudo sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-
-sudo sudo chown $(id -u):$(id -g) $HOME/.kube/config
-
- kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/tigera-operator.yaml
-
-curl https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/custom-resources.yaml -O
-
-
-sed -i 's/cidr: 192\.168\.0\.0\/16/cidr: 10.11.0.0\/16/g' custom-resources.yaml
-
-
-kubectl create -f custom-resources.yaml
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.31.3/manifests/tigera-operator.yaml
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.31.3/manifests/custom-resources.yaml
 
 kubectl get nodes
 
