@@ -1,4 +1,5 @@
-
+sudo apt update
+sudo apt install ufw -y
 
   sudo  systemctl start firewalld 
 sudo  systemctl restart firewalld   
