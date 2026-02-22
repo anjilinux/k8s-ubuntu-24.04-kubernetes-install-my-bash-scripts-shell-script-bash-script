@@ -1,5 +1,7 @@
 sudo apt update
 sudo apt install ufw -y
+sudo ufw allow ssh 
+sudo ufw enable 
 
   sudo  systemctl start firewalld 
 sudo  systemctl restart firewalld   
