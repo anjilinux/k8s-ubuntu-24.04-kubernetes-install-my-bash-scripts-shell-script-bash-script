@@ -46,3 +46,4 @@ sudo ufw allow  9093
        sudo ufw allow  8080  
 sudo  firewall-cmd --reload
 sudo systemctl daemon-reload
+sudo  systemctl stop  firewalld 
