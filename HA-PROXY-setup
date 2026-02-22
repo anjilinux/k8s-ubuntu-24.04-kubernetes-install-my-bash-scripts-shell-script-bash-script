@@ -1,0 +1,70 @@
+
+=============================++++++++++++++++++++++++++++++
+Install HAProxy
+
+sudo apt install haproxy -y
+
+sudo nano /etc/haproxy/haproxy.cfg
+
+frontend k8s-api
+    bind *:6444
+    mode tcp
+    option tcplog
+    default_backend k8s-masters
+
+backend k8s-masters
+    mode tcp
+    balance roundrobin
+    option tcp-check
+    server master1 192.168.31.67:6443 check
+    server master2 192.168.122.151:6443 check
+    server master3 192.168.122.198:6443 check
++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+sudo systemctl restart haproxy
+sudo systemctl enable haproxy
+
+sudo nano /etc/kubernetes/admin.conf
+
+Replace:
+
+192.168.31.67:6443
+
+With:
+
+192.168.31.67:6444
+
+Then:
+
+cp /etc/kubernetes/admin.conf $HOME/.kube/config
+
+Test:
+
+kubectl cluster-info
++++++++++++++++++++++++++++++++++++++++
+
+sudo systemctl stop kubelet
+
+root@master:~# kubectl get nodes   -o wide 
+NAME      STATUS   ROLES           AGE     VERSION    INTERNAL-IP       EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
+master1   Ready    control-plane   3h41m   v1.32.12   192.168.31.67     <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://1.7.28
+master2   Ready    control-plane   51m     v1.32.12   192.168.122.151   <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://2.2.1
+master3   Ready    control-plane   43m     v1.32.12   192.168.122.198   <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://2.2.1
+worker1   Ready    <none>          151m    v1.32.12   192.168.122.155   <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://2.2.1
+root@master:~# 
+root@master:~# kubectl get nodes   -o wide  -w 
+NAME      STATUS   ROLES           AGE     VERSION    INTERNAL-IP       EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
+master1   Ready    control-plane   3h41m   v1.32.12   192.168.31.67     <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://1.7.28
+master2   Ready    control-plane   51m     v1.32.12   192.168.122.151   <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://2.2.1
+master3   Ready    control-plane   44m     v1.32.12   192.168.122.198   <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://2.2.1
+worker1   Ready    <none>          151m    v1.32.12   192.168.122.155   <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://2.2.1
+master1   Ready    control-plane   3h41m   v1.32.12   192.168.31.67     <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://1.7.28
+
+
+root@master:~# kubectl get nodes   -o wide  -w 
+NAME      STATUS     ROLES           AGE     VERSION    INTERNAL-IP       EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
+master1   NotReady   control-plane   3h42m   v1.32.12   192.168.31.67     <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://1.7.28
+master2   Ready      control-plane   52m     v1.32.12   192.168.122.151   <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://2.2.1
+master3   Ready      control-plane   45m     v1.32.12   192.168.122.198   <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://2.2.1
+worker1   Ready      <none>          152m    v1.32.12   192.168.122.155   <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://2.2.1
+
+========================================================
