@@ -9,7 +9,7 @@ set -e
 echo "Updating system..."
 apt update -y
 apt upgrade -y
-sudo apt update
+sudo apt update -y
 sudo apt install ufw -y
 echo "Installing base packages..."
 apt install -y \
