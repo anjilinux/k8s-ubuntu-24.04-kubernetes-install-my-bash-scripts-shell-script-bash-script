@@ -1,0 +1,324 @@
+ga@master1:~$ kubectl get pods  -o wide 
+NAME                     READY   STATUS    RESTARTS   AGE     IP               NODE      NOMINATED NODE   READINESS GATES
+linux-865699fdc7-4m7sr   1/1     Running   0          175m    10.244.137.105   master1   <none>           <none>
+linux-865699fdc7-7h4cg   1/1     Running   0          31s     10.244.235.174   worker1   <none>           <none>
+linux-865699fdc7-g5qmq   1/1     Running   0          175m    10.244.189.99    worker2   <none>           <none>
+linux-865699fdc7-xf8vj   1/1     Running   0          175m    10.244.189.98    worker2   <none>           <none>
+nginx-5869d7778c-6tvhv   1/1     Running   0          6m56s   10.244.235.172   worker1   <none>           <none>
+nginx-5869d7778c-ppg2d   1/1     Running   0          6m56s   10.244.189.101   worker2   <none>           <none>
+nginx-5869d7778c-wfbmj   1/1     Running   0          6m56s   10.244.235.173   worker1   <none>           <none>
+
+==================
+vga@master1:~$ kubectl get  nodes -o wide 
+NAME      STATUS   ROLES           AGE     VERSION    INTERNAL-IP       EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
+master1   Ready    control-plane   5d21h   v1.32.12   192.168.31.67     <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://1.7.28
+master2   Ready    control-plane   5d18h   v1.32.12   192.168.122.151   <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://2.2.1
+master3   Ready    control-plane   5d18h   v1.32.12   192.168.122.198   <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://1.7.28
+worker1   Ready    <none>          5d20h   v1.32.12   192.168.122.232   <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://2.2.1
+worker2   Ready    <none>          5d1h    v1.32.12   192.168.122.155   <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://2.2.1
+vga@master1:~$ 
+=======================
+
+vga@master1:~$ kubectl taint node worker1 gpu=xxx:NoSchedule
+node/worker1 tainted
+vga@master1:~$ kubectl get  nodes -o wide 
+NAME      STATUS   ROLES           AGE     VERSION    INTERNAL-IP       EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
+master1   Ready    control-plane   5d21h   v1.32.12   192.168.31.67     <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://1.7.28
+master2   Ready    control-plane   5d18h   v1.32.12   192.168.122.151   <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://2.2.1
+master3   Ready    control-plane   5d18h   v1.32.12   192.168.122.198   <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://1.7.28
+worker1   Ready    <none>          5d20h   v1.32.12   192.168.122.232   <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://2.2.1
+worker2   Ready    <none>          5d1h    v1.32.12   192.168.122.155   <none>        Ubuntu 24.04.4 LTS   6.17.0-14-generic   containerd://2.2.1
+vga@master1:~$ kubectl get  nodes -o wide 
+
+=========
+vga@master1:~$ kubectl describe node worker1 | grep -i taint
+Taints:             gpu=xxx:NoSchedule
+====================================
++++++++++++++++++++++++++++++
+vga@master1:~$ kubectl  create deployment  noschedule  --image=nginx  --replicas=8
+deployment.apps/noschedule created
+vga@master1:~$ 
+
+++++++++++++++
+vga@master1:~$ kubectl get pods -o wide -w 
+NAME                         READY   STATUS    RESTARTS   AGE    IP               NODE      NOMINATED NODE   READINESS GATES
+linux-865699fdc7-4m7sr       1/1     Running   0          3h8m   10.244.137.105   master1   <none>           <none>
+linux-865699fdc7-7h4cg       1/1     Running   0          14m    10.244.235.174   worker1   <none>           <none>
+linux-865699fdc7-g5qmq       1/1     Running   0          3h8m   10.244.189.99    worker2   <none>           <none>
+linux-865699fdc7-xf8vj       1/1     Running   0          3h8m   10.244.189.98    worker2   <none>           <none>
+nginx-5869d7778c-6tvhv       1/1     Running   0          20m    10.244.235.172   worker1   <none>           <none>
+nginx-5869d7778c-ppg2d       1/1     Running   0          20m    10.244.189.101   worker2   <none>           <none>
+nginx-5869d7778c-wfbmj       1/1     Running   0          20m    10.244.235.173   worker1   <none>           <none>
+noschedule-f84648957-78g2g   1/1     Running   0          91s    10.244.189.104   worker2   <none>           <none>
+noschedule-f84648957-9cml8   1/1     Running   0          11s    10.244.137.118   master1   <none>           <none>
+noschedule-f84648957-b7894   1/1     Running   0          91s    10.244.189.103   worker2   <none>           <none>
+noschedule-f84648957-ck44g   1/1     Running   0          91s    10.244.137.110   master1   <none>           <none>
+noschedule-f84648957-ctjbv   1/1     Running   0          91s    10.244.137.112   master1   <none>           <none>
+noschedule-f84648957-j2v46   1/1     Running   0          91s    10.244.137.99    master1   <none>           <none>
+noschedule-f84648957-nqf2v   1/1     Running   0          11s    10.244.189.105   worker2   <none>           <none>
+noschedule-f84648957-r8b4j   1/1     Running   0          91s    10.244.137.106   master1   <none>           <none>
++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+vga@master1:~$ kubectl taint  node worker1 gpu-
+node/worker1 untainted
++++++++++++++++++++++++++  before ++++++++++++++
+vga@master1:~$ kubectl get pods  -o wide 
+NAME                         READY   STATUS    RESTARTS   AGE     IP               NODE      NOMINATED NODE   READINESS GATES
+linux-865699fdc7-4m7sr       1/1     Running   0          3h18m   10.244.137.105   master1   <none>           <none>
+linux-865699fdc7-7h4cg       1/1     Running   0          23m     10.244.235.174  "/ worker1/\"   <none>           <none>
+linux-865699fdc7-g5qmq       1/1     Running   0          3h18m   10.244.189.99    worker2   <none>           <none>
+linux-865699fdc7-xf8vj       1/1     Running   0          3h18m   10.244.189.98    worker2   <none>           <none>
+
+nginx-5869d7778c-6tvhv       1/1     Running   0          29m     10.244.235.172  "\[)] worker1   <none>           <none>
+nginx-5869d7778c-ppg2d       1/1     Running   0          29m     10.244.189.101   worker2   <none>           <none>
+nginx-5869d7778c-wfbmj       1/1     Running   0          29m     10.244.235.173   \()[}{worker1   <none>           <none>
+
+noschedule-f84648957-78g2g   1/1     Running   0          11m     10.244.189.104   worker2   <none>           <none>
+noschedule-f84648957-9cml8   1/1     Running   0          9m40s   10.244.137.118   master1   <none>           <none>
+noschedule-f84648957-b7894   1/1     Running   0          11m     10.244.189.103   worker2   <none>           <none>
+noschedule-f84648957-ck44g   1/1     Running   0          11m     10.244.137.110   master1   <none>           <none>
+noschedule-f84648957-ctjbv   1/1     Running   0          11m     10.244.137.112   master1   <none>           <none>
+noschedule-f84648957-j2v46   1/1     Running   0          11m     10.244.137.99    master1   <none>           <none>
+noschedule-f84648957-nqf2v   1/1     Running   0          9m40s   10.244.189.105   worker2   <none>           <none>
+noschedule-f84648957-r8b4j   1/1     Running   0          11m     10.244.137.106   master1   <none>           <none>
+
+++++++++++++++++++++++++++++++++++++
+vga@master1:~$ kubectl taint  node  worker1  app=dev:NoExecute
+node/worker1 tainted
+vga@master1:~$ kubectl get nodes 
+NAME      STATUS   ROLES           AGE     VERSION
+master1   Ready    control-plane   5d22h   v1.32.12
+master2   Ready    control-plane   5d19h   v1.32.12
+master3   Ready    control-plane   5d19h   v1.32.12
+worker1   Ready    <none>          5d21h   v1.32.12
+worker2   Ready    <none>          5d1h    v1.32.12
+vga@master1:~$ 
++++++++++++++++++   after ======+++++
+vga@master1:~$ kubectl get pods  -o wide 
+NAME                         READY   STATUS    RESTARTS   AGE     IP               NODE      NOMINATED NODE   READINESS GATES
+linux-865699fdc7-4m7sr       1/1     Running   0          3h28m   10.244.137.105   master1   <none>           <none>
+linux-865699fdc7-g5qmq       1/1     Running   0          3h28m   10.244.189.99    worker2   <none>           <none>
+linux-865699fdc7-gxrx5       1/1     Running   0          64s     10.244.137.116   master1   <none>           <none>
+linux-865699fdc7-xf8vj       1/1     Running   0          3h28m   10.244.189.98    worker2   <none>           <none>
+nginx-5869d7778c-8zmj2       1/1     Running   0          64s     10.244.137.117   master1   <none>           <none>
+nginx-5869d7778c-ppg2d       1/1     Running   0          39m     10.244.189.101   worker2   <none>           <none>
+nginx-5869d7778c-tlvbk       1/1     Running   0          64s     10.244.137.111   master1   <none>           <none>
+noschedule-f84648957-78g2g   1/1     Running   0          20m     10.244.189.104   worker2   <none>           <none>
+noschedule-f84648957-9cml8   1/1     Running   0          19m     10.244.137.118   master1   <none>           <none>
+noschedule-f84648957-b7894   1/1     Running   0          20m     10.244.189.103   worker2   <none>           <none>
+noschedule-f84648957-ck44g   1/1     Running   0          20m     10.244.137.110   master1   <none>           <none>
+noschedule-f84648957-ctjbv   1/1     Running   0          20m     10.244.137.112   master1   <none>           <none>
+noschedule-f84648957-j2v46   1/1     Running   0          20m     10.244.137.99    master1   <none>           <none>
+noschedule-f84648957-nqf2v   1/1     Running   0          19m     10.244.189.105   worker2   <none>           <none>
+noschedule-f84648957-r8b4j   1/1     Running   0          20m     10.244.137.106   master1   <none>           <none>
+++++++++++++++++++++++
+vga@master1:~$ kubectl create deployment  no-execute  --image=nginx  --replicas=4
+deployment.apps/no-execute created
+
+++++++++++++++
+vga@master1:~$ kubectl get pods -o wide -w 
+NAME                         READY   STATUS    RESTARTS   AGE     IP               NODE      NOMINATED NODE   READINESS GATES
+linux-865699fdc7-4m7sr       1/1     Running   0          3h38m   10.244.137.105   master1   <none>           <none>
+linux-865699fdc7-g5qmq       1/1     Running   0          3h38m   10.244.189.99    worker2   <none>           <none>
+linux-865699fdc7-gxrx5       1/1     Running   0          11m     10.244.137.116   master1   <none>           <none>
+linux-865699fdc7-xf8vj       1/1     Running   0          3h38m   10.244.189.98    worker2   <none>           <none>
+
+nginx-5869d7778c-8zmj2       1/1     Running   0          11m     10.244.137.117   master1   <none>           <none>
+nginx-5869d7778c-ppg2d       1/1     Running   0          50m     10.244.189.101   worker2   <none>           <none>
+nginx-5869d7778c-tlvbk       1/1     Running   0          11m     10.244.137.111   master1   <none>           <none>
+
+no-execute-fd7cf8d9b-9ls4n   1/1     Running   0          23s     10.244.137.108   master1   <none>           <none>
+no-execute-fd7cf8d9b-9z5fg   1/1     Running   0          23s     10.244.189.107   worker2   <none>           <none>
+no-execute-fd7cf8d9b-lsjtr   1/1     Running   0          23s     10.244.189.106   worker2   <none>           <none>
+no-execute-fd7cf8d9b-x9qqw   1/1     Running   0          23s     10.244.137.115   master1   <none>           <none>
+
+noschedule-f84648957-78g2g   1/1     Running   0          31m     10.244.189.104   worker2   <none>           <none>
+noschedule-f84648957-9cml8   1/1     Running   0          29m     10.244.137.118   master1   <none>           <none>
+noschedule-f84648957-b7894   1/1     Running   0          31m     10.244.189.103   worker2   <none>           <none>
+noschedule-f84648957-ck44g   1/1     Running   0          31m     10.244.137.110   master1   <none>           <none>
+noschedule-f84648957-ctjbv   1/1     Running   0          31m     10.244.137.112   master1   <none>           <none>
+noschedule-f84648957-j2v46   1/1     Running   0          31m     10.244.137.99    master1   <none>           <none>
+noschedule-f84648957-nqf2v   1/1     Running   0          29m     10.244.189.105   worker2   <none>           <none>
+noschedule-f84648957-r8b4j   1/1     Running   0          31m     10.244.137.106   master1   <none>           <none>
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+vga@master1:~$ kubectl get pods -o wide  -A  |  grep -i worker1 
+calico-system          calico-node-h5qqr                            0/1     CrashLoopBackOff   47 (2m30s ago)    4d1h    192.168.122.232   worker1   <none>           <none>
+calico-system          csi-node-driver-qrl82                        2/2     Running            8 (3h57m ago)     4d1h    10.244.235.167    worker1   <none>           <none>
+kube-system            kube-proxy-vl25h                             1/1     Running            8 (3h57m ago)     5d21h   192.168.122.232   worker1   <none>           <none>
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+vga@master1:~$ kubectl get pods -o wide  -A  |  grep -i worker2
+calico-system          calico-apiserver-6f7858f558-qwfcs            1/1     Running            1 (3h56m ago)     3d2h    10.244.189.90     worker2   <none>           <none>
+calico-system          calico-apiserver-6f7858f558-wrwpp            1/1     Running            2 (3h52m ago)     3d5h    10.244.189.87     worker2   <none>           <none>
+calico-system          calico-node-8chtj                            1/1     Running            4 (3h57m ago)     4d1h    192.168.122.155   worker2   <none>           <none>
+calico-system          calico-typha-cb99d4cc9-6h7hg                 1/1     Running            4 (3h57m ago)     4d1h    192.168.122.155   worker2   <none>           <none>
+calico-system          csi-node-driver-5x44x                        2/2     Running            8 (3h57m ago)     4d1h    10.244.189.96     worker2   <none>           <none>
+default                linux-865699fdc7-g5qmq                       1/1     Running            0                 3h45m   10.244.189.99     worker2   <none>           <none>
+default                linux-865699fdc7-xf8vj                       1/1     Running            0                 3h45m   10.244.189.98     worker2   <none>           <none>
+default                nginx-5869d7778c-ppg2d                       1/1     Running            0                 57m     10.244.189.101    worker2   <none>           <none>
+default                no-execute-fd7cf8d9b-9z5fg                   1/1     Running            0                 7m54s   10.244.189.107    worker2   <none>           <none>
+default                no-execute-fd7cf8d9b-lsjtr                   1/1     Running            0                 7m54s   10.244.189.106    worker2   <none>           <none>
+default                noschedule-f84648957-78g2g                   1/1     Running            0                 38m     10.244.189.104    worker2   <none>           <none>
+default                noschedule-f84648957-b7894                   1/1     Running            0                 38m     10.244.189.103    worker2   <none>           <none>
+default                noschedule-f84648957-nqf2v                   1/1     Running            0                 37m     10.244.189.105    worker2   <none>           <none>
+kube-system            coredns-668d6bf9bc-j9ct5                     0/1     CrashLoopBackOff   35 (4m20s ago)    3d2h    10.244.189.85     worker2   <none>           <none>
+kube-system            kube-proxy-sfbmq                             1/1     Running            5 (3h57m ago)     5d2h    192.168.122.155   worker2   <none>           <none>
+
+\\\\\\////\/\///{{}{['\/\//\'\'\\\'\\[[[[[[[[]]]]]]]]
+vga@master1:~$ 
+vga@master1:~$ kubectl taint  node  worker1  app-
+node/worker1 untainted
+()()]][}{}{{}(_(((/////////////[]][][][][]{]{}{][[]]}}))
+vga@master1:~$ kubectl get pods -o wide 
+NAME                         READY   STATUS    RESTARTS   AGE     IP               NODE      NOMINATED NODE   READINESS GATES
+linux-865699fdc7-4m7sr       1/1     Running   0          3h51m   10.244.137.105   master1   <none>           <none>
+linux-865699fdc7-g5qmq       1/1     Running   0          3h51m   10.244.189.99    worker2   <none>           <none>
+linux-865699fdc7-gxrx5       1/1     Running   0          24m     10.244.137.116   master1   <none>           <none>
+linux-865699fdc7-xf8vj       1/1     Running   0          3h51m   10.244.189.98    worker2   <none>           <none>
+nginx-5869d7778c-8zmj2       1/1     Running   0          24m     10.244.137.117   master1   <none>           <none>
+nginx-5869d7778c-ppg2d       1/1     Running   0          63m     10.244.189.101   worker2   <none>           <none>
+nginx-5869d7778c-tlvbk       1/1     Running   0          24m     10.244.137.111   master1   <none>           <none>
+no-execute-fd7cf8d9b-9ls4n   1/1     Running   0          13m     10.244.137.108   master1   <none>           <none>
+no-execute-fd7cf8d9b-9z5fg   1/1     Running   0          13m     10.244.189.107   worker2   <none>           <none>
+no-execute-fd7cf8d9b-lsjtr   1/1     Running   0          13m     10.244.189.106   worker2   <none>           <none>
+no-execute-fd7cf8d9b-x9qqw   1/1     Running   0          13m     10.244.137.115   master1   <none>           <none>
+noschedule-f84648957-78g2g   1/1     Running   0          44m     10.244.189.104   worker2   <none>           <none>
+noschedule-f84648957-9cml8   1/1     Running   0          42m     10.244.137.118   master1   <none>           <none>
+noschedule-f84648957-b7894   1/1     Running   0          44m     10.244.189.103   worker2   <none>           <none>
+noschedule-f84648957-ck44g   1/1     Running   0          44m     10.244.137.110   master1   <none>           <none>
+noschedule-f84648957-ctjbv   1/1     Running   0          44m     10.244.137.112   master1   <none>           <none>
+noschedule-f84648957-j2v46   1/1     Running   0          44m     10.244.137.99    master1   <none>           <none>
+noschedule-f84648957-nqf2v   1/1     Running   0          42m     10.244.189.105   worker2   <none>           <none>
+noschedule-f84648957-r8b4j   1/1     Running   0          44m     10.244.137.106   master1   <none>           <none>
+*****************************************+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+vga@master1:~$ kubectl taint  node  worker1  app-
+node/worker1 untainted
+vga@master1:~$ kubectscale deployment  linux  --replicas=3
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+vga@master1:~$ kubectl get pods -o wide -w 
+NAME                         READY   STATUS    RESTARTS   AGE     IP               NODE      NOMINATED NODE   READINESS GATES
+linux-865699fdc7-4t6gc       1/1     Running   0          2m30s       (){[[][]]}  worker1   <none>           <none>
+linux-865699fdc7-g5qmq       1/1     Running   0          4h4m    10.244.189.99    worker2   <none>           <none>
+linux-865699fdc7-xf8vj       1/1     Running   0          4h4m    10.244.189.98    worker2   <none>           <none>
+
+nginx-5869d7778c-8zmj2       1/1     Running   0          37m     10.244.137.117   master1   <none>           <none>
+nginx-5869d7778c-ppg2d       1/1     Running   0          75m     10.244.189.101   worker2   <none>           <none>
+nginx-5869d7778c-tlvbk       1/1     Running   0          37m     10.244.137.111   master1   <none>           <none>
+
+no-execute-fd7cf8d9b-9ls4n   1/1     Running   0          26m     10.244.137.108   master1   <none>           <none>
+no-execute-fd7cf8d9b-9z5fg   1/1     Running   0          26m     10.244.189.107   worker2   <none>           <none>
+no-execute-fd7cf8d9b-lsjtr   1/1     Running   0          26m     10.244.189.106   worker2   <none>           <none>
+no-execute-fd7cf8d9b-x9qqw   1/1     Running   0          26m     10.244.137.115   master1   <none>           <none>
+
+noschedule-f84648957-78g2g   1/1     Running   0          56m     10.244.189.104   worker2   <none>           <none>
+noschedule-f84648957-9cml8   1/1     Running   0          55m     10.244.137.118   master1   <none>           <none>
+noschedule-f84648957-b7894   1/1     Running   0          56m     10.244.189.103   worker2   <none>           <none>
+noschedule-f84648957-ck44g   1/1     Running   0          56m     10.244.137.110   master1   <none>           <none>
+noschedule-f84648957-ctjbv   1/1     Running   0          56m     10.244.137.112   master1   <none>           <none>
+noschedule-f84648957-j2v46   1/1     Running   0          56m     10.244.137.99    master1   <none>           <none>
+noschedule-f84648957-nqf2v   1/1     Running   0          55m     10.244.189.105   worker2   <none>           <none>
+noschedule-f84648957-r8b4j   1/1     Running   0          56m     10.244.137.106   master1   <none>           <none>
+][][][\/\/\\\/\-]-\]-]-]-]--\[\[\[\[\[\[\[\[\[[\p[\p=\=[=\[]]]]]]]]]]]]]++++++++++++++
+
+vga@master1:~$ kubectl taint node worker1 env=prod:PreferNoSchedule 
+node/worker1 tainted
+++++++++++
+vga@master1:~$ kubectl get pods -o wide -w 
+NAME                         READY   STATUS    RESTARTS   AGE     IP               NODE      NOMINATED NODE   READINESS GATES
+linux-865699fdc7-4t6gc       1/1     Running   0          6m39s  )()(([][]]][]))  worker1   <none>           <none>
+linux-865699fdc7-g5qmq       1/1     Running   0          4h8m    10.244.189.99    worker2   <none>           <none>
+linux-865699fdc7-xf8vj       1/1     Running   0          4h8m    10.244.189.98    worker2   <none>           <none>
+
+nginx-5869d7778c-8zmj2       1/1     Running   0          41m     10.244.137.117   master1   <none>           <none>
+nginx-5869d7778c-ppg2d       1/1     Running   0          80m     10.244.189.101   worker2   <none>           <none>
+nginx-5869d7778c-tlvbk       1/1     Running   0          41m     10.244.137.111   master1   <none>           <none>
+
+no-execute-fd7cf8d9b-9ls4n   1/1     Running   0          30m     10.244.137.108   master1   <none>           <none>
+no-execute-fd7cf8d9b-9z5fg   1/1     Running   0          30m     10.244.189.107   worker2   <none>           <none>
+no-execute-fd7cf8d9b-lsjtr   1/1     Running   0          30m     10.244.189.106   worker2   <none>           <none>
+no-execute-fd7cf8d9b-x9qqw   1/1     Running   0          30m     10.244.137.115   master1   <none>           <none>
+
+noschedule-f84648957-78g2g   1/1     Running   0          61m     10.244.189.104   worker2   <none>           <none>
+noschedule-f84648957-9cml8   1/1     Running   0          59m     10.244.137.118   master1   <none>           <none>
+noschedule-f84648957-b7894   1/1     Running   0          61m     10.244.189.103   worker2   <none>           <none>
+noschedule-f84648957-ck44g   1/1     Running   0          61m     10.244.137.110   master1   <none>           <none>
+noschedule-f84648957-ctjbv   1/1     Running   0          61m     10.244.137.112   master1   <none>           <none>
+noschedule-f84648957-j2v46   1/1     Running   0          61m     10.244.137.99    master1   <none>           <none>
+noschedule-f84648957-nqf2v   1/1     Running   0          59m     10.244.189.105   worker2   <none>           <none>
+noschedule-f84648957-r8b4j   1/1     Running   0          61m     10.244.137.106   master1   <none>           <none>
++++++++++++++++++++++++++++++++++
+
+vga@master1:~$ kubectl create  deployment  prefer-noschedule   --image=nginx   --replicas=6
+deployment.apps/prefer-noschedule created
+
+////[][[\/[\/[\/[\[/\/[/\[/\[/\/[\/[\/[\/]]]]]]]]]]]]
+vga@master1:~$ kubectl get pods -o wide -w 
+NAME                                 READY   STATUS    RESTARTS   AGE     IP               NODE      NOMINATED NODE   READINESS GATES
+linux-865699fdc7-4t6gc               1/1     Running   0          26m     10.244.235.175   worker1   <none>           <none>
+linux-865699fdc7-g5qmq               1/1     Running   0          4h27m   10.244.189.99    worker2   <none>           <none>
+linux-865699fdc7-xf8vj               1/1     Running   0          4h27m   10.244.189.98    worker2   <none>           <none>
+nginx-5869d7778c-8zmj2               1/1     Running   0          60m     10.244.137.117   master1   <none>           <none>
+nginx-5869d7778c-ppg2d               1/1     Running   0          99m     10.244.189.101   worker2   <none>           <none>
+nginx-5869d7778c-tlvbk               1/1     Running   0          60m     10.244.137.111   master1   <none>           <none>
+
+no-execute-fd7cf8d9b-9ls4n           1/1     Running   0          50m     10.244.137.108   master1   <none>           <none>
+no-execute-fd7cf8d9b-9z5fg           1/1     Running   0          50m     10.244.189.107   worker2   <none>           <none>
+no-execute-fd7cf8d9b-lsjtr           1/1     Running   0          50m     10.244.189.106   worker2   <none>           <none>
+no-execute-fd7cf8d9b-x9qqw           1/1     Running   0          50m     10.244.137.115   master1   <none>           <none>
+noschedule-f84648957-78g2g           1/1     Running   0          80m     10.244.189.104   worker2   <none>           <none>
+noschedule-f84648957-9cml8           1/1     Running   0          79m     10.244.137.118   master1   <none>           <none>
+noschedule-f84648957-b7894           1/1     Running   0          80m     10.244.189.103   worker2   <none>           <none>
+noschedule-f84648957-ck44g           1/1     Running   0          80m     10.244.137.110   master1   <none>           <none>
+noschedule-f84648957-ctjbv           1/1     Running   0          80m     10.244.137.112   master1   <none>           <none>
+noschedule-f84648957-j2v46           1/1     Running   0          80m     10.244.137.99    master1   <none>           <none>
+noschedule-f84648957-nqf2v           1/1     Running   0          79m     10.244.189.105   worker2   <none>           <none>
+noschedule-f84648957-r8b4j           1/1     Running   0          80m     10.244.137.106   master1   <none>           <none>
+
+prefer-noschedule-5dcbd95b7d-98ztc   1/1     Running   0          26s     10.244.137.126   master1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-9hw7s   1/1     Running   0          26s     10.244.189.108   worker2   <none>           <none>
+prefer-noschedule-5dcbd95b7d-fqsdw   1/1     Running   0          26s     10.244.137.123   master1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-hkbl4   1/1     Running   0          26s     10.244.189.109   worker2   <none>           <none>
+prefer-noschedule-5dcbd95b7d-z8c4q   1/1     Running   0          26s     10.244.137.124   master1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-zclrm   1/1     Running   0          26s     10.244.137.66    master1   <none>           <none>
+++++++++++++++++++++++++++++++++++++++++++++++
+
+vga@master1:~$ kubectl scale deployment  prefer-noschedule  --replicas=190     ([][}\()()]]][[]][][][]
+deployment.apps/prefer-noschedule scaled
+
+
+
+[][[][]\[\[[][prefer-noschedule-5dcbd95b7d-zs65k   0/1     ContainerCreating   0             0s      <none>           worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-24x6b   0/1     ContainerCreating   0             0s      <none>           worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-5wb78   0/1     ContainerCreating   0             0s      <none>  [][][]         worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-qhj8b   0/1     ContainerCreating   0             0s      <none>           worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-d78fv   0/1     ContainerCreating   0             0s      <none>           worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-nc8pd   0/1     ContainerCreating   0             0s      <none>           worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-59bm2   0/1     ContainerCreating   0             0s      <none>           worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-6jwmc   0/1     ContainerCreating   0             0s      <none>           worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-9n556   0/1     ContainerCreating   0             0s      <none>           worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-zs65k   0/1     ContainerCreating   0             1s      <none>           worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-d78fv   0/1     ContainerCreating   0             1s      <none>           worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-9tfpj   0/1     ContainerCreating   0             1s      <none>           worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-24x6b   0/1     ContainerCreating   0             1s      <none>           worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-6jwmc   0/1     ContainerCreating   0             1s      <none>           worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-9n556   0/1     ContainerCreating   0             1s      <none>           worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-qhj8b   0/1     ContainerCreating   0             1s      <none>           worker1   <none>           <none>
+
+prefer-noschedule-5dcbd95b7d-nc8pd   0/1     ContainerCreating   0             1s      <none>           worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-5wb78   0/1     ContainerCreating   0             1s      <none>           worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-59bm2   0/1     ContainerCreating   0             1s      <none>           worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-zs65k   1/1     Running             0             3s      10.244.235.164   worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-d78fv   1/1     Running             0             5s      10.244.235.186   worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-9tfpj   1/1     Running             0             7s      10.244.235.156   worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-24x6b   1/1     Running             0             9s      10.244.235.172   worker1   <none>           <none>
+prefer-noschedule-5dcbd95b7d-6jwmc   1/1     Running             0             10s     10.244.235.160   worker1  ][][[ [[[()()(})}()({}9)]]]
+]
+][][][]][]][][][][][]\\/[[/[]/[/]\]\'][']'\]][']['][]'[]'[]'[]/'[]][[]][][][][][[[[[[[[[[[[[][][][]][][][[][]]]]]]]]]]]]]]
+
+
+
+
