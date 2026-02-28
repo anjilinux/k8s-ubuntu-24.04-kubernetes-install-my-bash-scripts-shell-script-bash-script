@@ -1,0 +1,68 @@
+Deploying OpenTelemetry Demo on Kubernetes
+kubectl create namespace otel-demo
+kubectl create namespace otel-demo
+
+kubectl apply -f https://raw.githubusercontent.com/open-telemetry/opentelemetry-demo/main/kubernetes/opentelemetry-demo.yaml -n otel-demo
+
+Frontend service
+
+Cart service
+
+Checkout service
+
+Payment service
+
+Product Catalog
+
+Recommendation service
+
+PostgreSQL
+
+Kafka
+
+Prometheus
+
+Jaeger
+
+Grafana
+
+OpenSearch
+
+OpenTelemetry Collector
+
+kubectl get pods -n otel-demo
+kubectl get svc -n otel-demo
+frontend
+
+frontend-proxy
+
+jaeger-query
+
+grafana
+
+prometheus
+
+otel-collector
+
+kubectl patch svc frontend-proxy -n otel-demo \
+  -p '{"spec": {"type": "NodePort"}}'
+
+kubectl get svc frontend-proxy -n otel-demo
+
+http://<NodeIP>:<NodePort>  http://192.168.31.67:30080
++++++++++++++++++++++++++++++++++++++++++++
+View Traces in Grafana
+
+Open Grafana (if exposed or port-forwarded).
+Go to:
+
+Explore → Jaeger
+
+frontend
+   ├── cart
+   ├── product-catalog
+   ├── recommendation
+   └── checkout
+         └── payment
+#########################################################333
+         
