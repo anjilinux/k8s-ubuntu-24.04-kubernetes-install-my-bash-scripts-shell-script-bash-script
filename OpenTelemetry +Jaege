@@ -1,0 +1,133 @@
+OpenTelemetry 
+kubectl create namespace observability
+kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
+
+kubectl get pods -n opentelemetry-operator-system
++++++++++++++++++++++++++++++
+nano otel-collector.yaml
+
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel
+  namespace: observability
+spec:
+  mode: daemonset
+
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      batch: {}
+
+    exporters:
+      debug:
+        verbosity: detailed
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [debug]
+
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [debug]
+
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [debug]
+++++++++++++++++++++++++++++++++          
+kubectl apply -f otel-collector.yaml
+kubectl get pods -n observability -o wide
+
+kubectl edit svc otel-collector -n observability
+
+Change:
+
+type: NodePort
+
+Add fixed ports:
+
+ports:
+- name: otlp-grpc
+  port: 4317
+  targetPort: 4317
+  nodePort: 32222
+
+- name: otlp-http
+  port: 4318
+  targetPort: 4318
+  nodePort: 32223
+////////////[][][[[\\\\\\\\\\\\[\[][][/[[[[[[[[[[[\[/\[]]]]]]]]]]]]]]]]]]  
+kubectl get svc -n observability
+
+curl -X POST http://<NODE-IP>:32223/v1/traces \
+  -H "Content-Type: application/json" \
+  -d '{"resourceSpans":[]}'
+
+curl -X POST http://192.168.31.67:32223/v1/traces \
+-H "Content-Type: application/json" \
+-d '{"resourceSpans":[]}'
+
+=================
+kubectl logs -n observability daemonset/otel-collector
+#############################################################################33
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Installing Jaeger on Kubernetes (2026 Operator Method) with Fixed NodePort
+
+kubectl create namespace tracing
+
+kubectl apply -f https://github.com/jaegertracing/jaeger-operator/releases/latest/download/jaeger-operator.yaml
+
+kubectl get pods -n tracing
++++++++++++++++++++++++++++++++
+Create jaeger.yaml:
+
+apiVersion: jaegertracing.io/v1
+kind: Jaeger
+metadata:
+  name: simplest
+  namespace: tracing
+spec:
+  strategy: allInOne
+  allInOne:
+    image: jaegertracing/all-in-one:1.49
+
++++++++++++++++++++
+kubectl apply -f jaeger.yaml
+kubectl get pods -n tracing
+
+++++++++++++++++++++
+4️⃣ Expose Jaeger UI on Fixed NodePort (31111)
+Create a separate YAML jaeger-nodeport.yaml:
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: simplest-query-nodeport
+  namespace: tracing
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/instance: simplest
+    app.kubernetes.io/component: all-in-one
+    app.kubernetes.io/name: simplest
+  ports:
+    - name: http-query
+      port: 16686
+      targetPort: 16686
+      nodePort: 31111
+++++++++++++++++++++++++++++++++      
+kubectl apply -f jaeger-nodeport.yaml
+kubectl get svc -n tracing
