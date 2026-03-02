@@ -1,0 +1,188 @@
+📘 Kubernetes Logging Stack Documentation
+Loki + Promtail + External Grafana (Bare Metal)
+1️⃣ Project Objective
+
+To deploy a centralized logging system in a Kubernetes cluster using:
+
+Grafana Loki – Log aggregation backend
+
+Promtail – Log collector
+
+Grafana – Visualization UI
+
+Grafana runs on a bare-metal machine outside Kubernetes.
+
+2️⃣ Environment Details
+Component	Value
+Kubernetes Type	Bare-metal cluster
+Namespace	logging
+Loki Version	3.6.5
+Helm Chart	loki-6.53.0
+Node IP	192.168.31.67
+Grafana	Installed locally (outside cluster)
+3️⃣ Architecture Overview
+
+Kubernetes Pods
+↓
+Promtail (DaemonSet)
+↓
+Loki (Single Binary)
+↓
+NodePort (31000)
+↓
+Grafana (Bare Metal)
+
+4️⃣ Pre-Requisites
+
+Kubernetes cluster running
+
+kubectl configured
+
+Helm installed
+
+Internet access for pulling Helm charts
+
+5️⃣ Installation Steps
+5.1 Create Namespace
+kubectl create namespace logging
+5.2 Add Helm Repository
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+5.3 Install Loki (Single Binary Mode)
+helm install loki grafana/loki \
+  --namespace logging
+5.4 Install Promtail
+helm install promtail grafana/promtail \
+  --namespace logging
+6️⃣ Verify Deployment
+kubectl get pods -n logging
+kubectl get svc -n logging
+
+Expected output:
+
+loki-0 → Running
+
+promtail-xxxxx → Running
+
+loki-gateway → Running
+
+7️⃣ Testing Loki API
+
+Initial test:
+
+curl http://127.0.0.1:3100
+
+Problem:
+❌ Connection refused
+
+Reason:
+Loki service type was ClusterIP, not externally accessible.
+
+8️⃣ Temporary Testing via Port Forward
+kubectl -n logging port-forward svc/loki 3100:3100
+
+Query logs:
+
+NOW=$(date +%s)
+START=$((NOW - 300))
+
+curl -G "http://127.0.0.1:3100/loki/api/v1/query_range" \
+  --data-urlencode "query={namespace=\"logging\"}" \
+  --data-urlencode "start=${START}000000000" \
+  --data-urlencode "end=${NOW}000000000"
+
+Result:
+✅ Logs returned successfully.
+
+Conclusion:
+Loki ingestion working.
+
+9️⃣ Permanent Exposure Using NodePort
+
+Since Grafana runs outside Kubernetes, Loki must be exposed externally.
+
+9.1 Convert Service to NodePort
+kubectl -n logging patch svc loki --type='json' -p='[
+  {"op":"replace","path":"/spec/type","value":"NodePort"},
+  {"op":"add","path":"/spec/ports/0/nodePort","value":31000}
+]'
+
+Verify:
+
+kubectl get svc -n logging
+
+Expected:
+
+loki   NodePort   3100:31000/TCP
+9.2 Open Firewall
+sudo ufw allow 31000/tcp
+
+Test in browser:
+
+http://192.168.31.67:31000/ready
+
+Expected:
+
+ready
+🔟 Configure Loki in Grafana
+
+Open Grafana
+
+Go to Connections → Data Sources
+
+Add Loki
+
+URL:
+
+http://192.168.31.67:31000
+
+Authentication: No Authentication
+
+Click Save & Test
+
+Result:
+✅ Data source successfully connected.
+
+1️⃣1️⃣ Querying Logs
+
+In Explore:
+
+Working query:
+
+{namespace="calico-system"}
+
+Issue faced:
+
+{}
+
+Error:
+Loki requires at least one non-empty label matcher.
+
+Correct alternative:
+
+{namespace=~".+"}
+1️⃣2️⃣ Real-Time Log Metrics
+
+Count logs per minute:
+
+count_over_time({namespace="calico-system"}[1m])
+
+Enable auto-refresh → 5s
+
+1️⃣3️⃣ Issues Faced & Solutions
+Problem	Cause	Solution
+Connection refused	Service was ClusterIP	Changed to NodePort
+No data in dashboard	Wrong time range	Changed to Last 1 hour
+{} query failed	Loki requires label matcher	Used {namespace=~".+"}
+Grafana unable to connect	Using cluster DNS	Used NodeIP:NodePort
+1️⃣4️⃣ Final Outcome
+
+Centralized logging implemented
+
+External Grafana integrated
+
+Real-time log monitoring enabled
+
+Permanent NodePort exposure configured
+
+Firewall rules configured
