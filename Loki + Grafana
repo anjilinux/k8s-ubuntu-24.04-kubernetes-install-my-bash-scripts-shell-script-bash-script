@@ -1,0 +1,220 @@
+📘 Loki + Grafana Setup Documentation (Kubernetes)
+
+This document describes the end-to-end setup of a centralized logging system using:
+
+Loki – Log storage
+
+Promtail – Log collector
+
+Grafana – Visualization & alerting
+
+Kubernetes – Log source
+
+1️⃣ Install Loki (Helm)
+Add Helm Repository
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+Create Namespace
+kubectl create namespace logging
+Install Loki (Single Binary Mode)
+helm install loki grafana/loki-stack \
+  --namespace logging
+
+Or install only Loki:
+
+helm install loki grafana/loki \
+  --namespace logging
+Verify Pods
+kubectl get pods -n logging
+
+You should see:
+
+loki
+
+promtail (if using loki-stack)
+
+2️⃣ Install Promtail
+
+If not using loki-stack:
+
+helm install promtail grafana/promtail \
+  --namespace logging \
+  --set "loki.serviceName=loki"
+Verify
+kubectl get pods -n logging
+
+Promtail should be running on all nodes.
+
+3️⃣ Verify Loki is Receiving Logs
+
+Port forward Loki:
+
+kubectl port-forward -n logging svc/loki 3100:3100
+
+Test:
+
+curl http://localhost:3100/ready
+
+Expected output:
+
+ready
+
+You can also check logs:
+
+kubectl logs -n logging deploy/promtail
+4️⃣ Add Loki Data Source in Grafana
+
+Open Grafana
+
+Go to:
+Connections → Data Sources
+
+Click Add data source
+
+Select Loki
+
+URL:
+
+http://loki.logging:3100
+
+Click Save & Test
+
+You should see:
+
+✅ Data source connected successfully
+
+5️⃣ Test in Explore
+
+Go to Explore
+
+Select Data Source: Loki
+
+Run:
+
+{namespace=~".+"}
+
+If logs appear → Loki is working correctly.
+
+6️⃣ Create Dashboard
+
+Go to Dashboards → New Dashboard
+
+Click Add Visualization
+
+Select Data Source: Loki
+
+7️⃣ Create Variables (Dynamic Filters)
+
+Go to:
+
+Dashboard → ⚙ Settings → Variables
+
+🔹 Variable 1: namespace
+
+Name: namespace
+
+Type: Query
+
+Data Source: Loki
+
+Query Type: Label values
+
+Label: namespace
+
+Enable:
+
+Multi-value
+
+Include All
+
+Save.
+
+🔹 Variable 2: stream
+
+Name: stream
+
+Type: Query
+
+Data Source: Loki
+
+Query Type: Label values
+
+Label: stream
+
+Stream selector:
+
+{namespace=~"$namespace"}
+
+Enable Include All.
+
+Save.
+
+🔹 Variable 3: container
+
+Name: container
+
+Type: Query
+
+Data Source: Loki
+
+Query Type: Label values
+
+Label: container
+
+Stream selector:
+
+{namespace=~"$namespace"}
+
+Enable Include All.
+
+Save.
+
+8️⃣ Create Log Panels
+🔹 Panel 1 – Live Logs
+
+Visualization: Logs
+
+{namespace=~"$namespace", container=~"$container", stream=~"$stream"}
+
+Enable:
+
+Show labels
+
+Wrap lines
+
+Prettify JSON
+
+🔹 Panel 2 – Error Count (Last 5m)
+
+Visualization: Stat
+
+sum(
+  count_over_time(
+    {namespace=~"$namespace", detected_level="error"}[5m]
+  )
+)
+
+Add Threshold:
+
+Green = 0
+
+Red = 1+
+
+🔹 Panel 3 – Log Level Breakdown
+
+Visualization: Bar Chart
+
+sum by (detected_level) (
+  count_over_time({namespace=~"$namespace"}[5m])
+)
+9️⃣ Create Alert Panels (Error Monitoring)
+
+Go to:
+
+Alerting → Create Alert Rule
+
+Query:
+sum(
+  count_over_time({detected_level="error"}[5m])
+)
+Condition
