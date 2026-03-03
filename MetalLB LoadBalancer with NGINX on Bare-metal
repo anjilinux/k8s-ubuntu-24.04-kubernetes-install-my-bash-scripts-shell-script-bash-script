@@ -1,0 +1,134 @@
+
+Setting up MetalLB LoadBalancer with NGINX on Bare-metal Kubernetes
+Prerequisites
+
+A working Kubernetes cluster (multi-node or single-node)
+
+kubectl installed and configured
+
+All nodes able to communicate on the same network/subnet
+
+Container runtime installed (e.g., containerd)
+
+1. Verify Cluster Nodes
+
+Check that all nodes are Ready:
+
+kubectl get nodes -o wide
+
+Expected output should show all your nodes in Ready status with internal IPs.
+
+2. Install MetalLB
+
+Apply MetalLB manifests:
+
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.15.3/config/manifests/metallb-native.yaml
+
+Verify the pods:
+
+kubectl get pods -n metallb-system -o wide
+
+You should see:
+
+controller running
+
+speaker running on all nodes
+
+⚠️ If some speaker pods are in ContainerCreating or CrashLoopBackOff, ensure all nodes can communicate via network.
+
+3. Configure MetalLB IP Address Pool
+
+Create a config file metallb-config.yaml:
+
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: default-address-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.122.240-192.168.122.250   # Adjust to your free IP range
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: default-l2
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - default-address-pool
+
+Apply the configuration:
+
+kubectl apply -f metallb-config.yaml
+
+Verify:
+
+kubectl get ipaddresspool -n metallb-system
+kubectl get l2advertisement -n metallb-system
+4. Deploy Test NGINX Pod
+
+Create test-nginx-lb.yaml:
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-nginx
+  labels:
+    app: test-nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx:stable
+    ports:
+    - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-nginx-lb
+spec:
+  selector:
+    app: test-nginx
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 80
+
+Apply it:
+
+kubectl apply -f test-nginx-lb.yaml
+5. Verify Service and LoadBalancer IP
+
+Check the LoadBalancer service:
+
+kubectl get svc test-nginx-lb
+
+Expected output:
+
+NAME            TYPE           CLUSTER-IP     EXTERNAL-IP       PORT(S)        AGE
+test-nginx-lb   LoadBalancer   10.98.95.219   192.168.122.240   80:31302/TCP   0s
+
+EXTERNAL-IP should be from the MetalLB IP pool
+
+6. Test NGINX LoadBalancer
+
+Test locally from master node:
+
+curl http://192.168.122.240
+
+You should see:
+
+<h1>Welcome to nginx!</h1>
+
+Test from other nodes in the same network to ensure MetalLB is reachable.
+
+7. Verify Pods
+
+Check pods and their node distribution:
+
+kubectl get pods -o wide
+
+Ensure test-nginx pod is running
+
+MetalLB speakers running on all nodes
