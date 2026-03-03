@@ -1,44 +1,41 @@
+MetalLB LoadBalancer with NGINX on Bare-Metal Kubernetes
+1️⃣ Prerequisites
 
-Setting up MetalLB LoadBalancer with NGINX on Bare-metal Kubernetes
-Prerequisites
+A working Kubernetes cluster (multi-node or single-node).
 
-A working Kubernetes cluster (multi-node or single-node)
+kubectl installed and configured.
 
-kubectl installed and configured
+All nodes on the same network/subnet.
 
-All nodes able to communicate on the same network/subnet
+Container runtime installed (e.g., containerd).
 
-Container runtime installed (e.g., containerd)
-
-1. Verify Cluster Nodes
-
-Check that all nodes are Ready:
+Verify all nodes are ready:
 
 kubectl get nodes -o wide
 
-Expected output should show all your nodes in Ready status with internal IPs.
+Expected output should show all nodes in Ready state with internal IPs.
 
-2. Install MetalLB
+2️⃣ Install MetalLB
 
-Apply MetalLB manifests:
+Apply the MetalLB manifests:
 
 kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.15.3/config/manifests/metallb-native.yaml
 
-Verify the pods:
+Verify pods:
 
 kubectl get pods -n metallb-system -o wide
 
-You should see:
+Expected output:
 
 controller running
 
 speaker running on all nodes
 
-⚠️ If some speaker pods are in ContainerCreating or CrashLoopBackOff, ensure all nodes can communicate via network.
+⚠️ If some speaker pods are in ContainerCreating or CrashLoopBackOff, ensure all nodes can communicate on the network.
 
-3. Configure MetalLB IP Address Pool
+3️⃣ Configure MetalLB IP Pool
 
-Create a config file metallb-config.yaml:
+Create metallb-config.yaml:
 
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
@@ -47,7 +44,7 @@ metadata:
   namespace: metallb-system
 spec:
   addresses:
-  - 192.168.122.240-192.168.122.250   # Adjust to your free IP range
+  - 192.168.31.240-192.168.31.250
 ---
 apiVersion: metallb.io/v1beta1
 kind: L2Advertisement
@@ -66,69 +63,252 @@ Verify:
 
 kubectl get ipaddresspool -n metallb-system
 kubectl get l2advertisement -n metallb-system
-4. Deploy Test NGINX Pod
+4️⃣ Configure /etc/hosts
 
-Create test-nginx-lb.yaml:
+Add entries for testing (on all nodes where you’ll run curl):
+
+127.0.0.1 localhost
+127.0.1.1 vga
+
+192.168.31.241 test1.local
+192.168.31.242 test2.local
+
+These IPs correspond to the MetalLB-assigned LoadBalancer IP for your NGINX Ingress.
+
+5️⃣ NGINX Service 1
+
+Create test-nginx-fixed-all.yaml:
 
 apiVersion: v1
-kind: Pod
+kind: ConfigMap
+metadata:
+  name: test-nginx-index
+data:
+  index.html: |
+    <html>
+    <head><title>Test NGINX Ingress</title></head>
+    <body>
+      <h1>Success! NGINX Ingress is working.</h1>
+    </body>
+    </html>
+---
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: test-nginx
-  labels:
-    app: test-nginx
 spec:
-  containers:
-  - name: nginx
-    image: nginx:stable
-    ports:
-    - containerPort: 80
+  replicas: 3
+  selector:
+    matchLabels:
+      app: test-nginx
+  template:
+    metadata:
+      labels:
+        app: test-nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.25
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - mountPath: /usr/share/nginx/html
+          name: nginx-index
+      volumes:
+      - name: nginx-index
+        configMap:
+          name: test-nginx-index
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: test-nginx-lb
+  name: test-nginx
 spec:
   selector:
     app: test-nginx
-  type: LoadBalancer
   ports:
   - port: 80
     targetPort: 80
 
-Apply it:
+Apply and restart deployment:
 
-kubectl apply -f test-nginx-lb.yaml
-5. Verify Service and LoadBalancer IP
+kubectl apply -f test-nginx-fixed-all.yaml
+kubectl rollout restart deployment test-nginx
+6️⃣ NGINX Ingress 1
 
-Check the LoadBalancer service:
+Create test-ingress.yaml:
 
-kubectl get svc test-nginx-lb
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: test-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: test1.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: test-nginx
+            port:
+              number: 80
+
+Apply:
+
+kubectl apply -f test-ingress.yaml
+
+Test:
+
+curl http://test1.local
 
 Expected output:
 
-NAME            TYPE           CLUSTER-IP     EXTERNAL-IP       PORT(S)        AGE
-test-nginx-lb   LoadBalancer   10.98.95.219   192.168.122.240   80:31302/TCP   0s
+<h1>Success! NGINX Ingress is working.</h1>
+7️⃣ NGINX Service 2
 
-EXTERNAL-IP should be from the MetalLB IP pool
+Create test-nginx2.yaml:
 
-6. Test NGINX LoadBalancer
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-nginx2-index
+data:
+  index.html: |
+    <html>
+    <head><title>Test NGINX Ingress 2</title></head>
+    <body>
+      <h1>Success! This is NGINX Service 2.</h1>
+    </body>
+    </html>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-nginx2
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: test-nginx2
+  template:
+    metadata:
+      labels:
+        app: test-nginx2
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.25
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - mountPath: /usr/share/nginx/html
+          name: nginx2-index
+      volumes:
+      - name: nginx2-index
+        configMap:
+          name: test-nginx2-index
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-nginx2
+spec:
+  selector:
+    app: test-nginx2
+  ports:
+  - port: 80
+    targetPort: 80
 
-Test locally from master node:
+Apply and restart deployment:
 
-curl http://192.168.122.240
+kubectl apply -f test-nginx2.yaml
+kubectl rollout restart deployment test-nginx2
+8️⃣ Multi-Host Ingress
 
-You should see:
+Create multi-host-ingress.yaml:
 
-<h1>Welcome to nginx!</h1>
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: multi-host-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: test1.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: test-nginx
+            port:
+              number: 80
+  - host: test2.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: test-nginx2
+            port:
+              number: 80
 
-Test from other nodes in the same network to ensure MetalLB is reachable.
+Apply:
 
-7. Verify Pods
+kubectl apply -f multi-host-ingress.yaml
 
-Check pods and their node distribution:
+Test both hosts:
 
-kubectl get pods -o wide
+curl http://test1.local
+curl http://test2.local
 
-Ensure test-nginx pod is running
+Expected output:
 
-MetalLB speakers running on all nodes
+test1.local → NGINX Service 1 page
+
+test2.local → NGINX Service 2 page
+
+9️⃣ Verification Commands
+
+Check pods:
+
+kubectl get pods -l app=test-nginx
+kubectl get pods -l app=test-nginx2
+
+Check services:
+
+kubectl get svc
+
+Check ingress:
+
+kubectl get ingress multi-host-ingress -o wide
+
+Check endpoints:
+
+kubectl get endpoints test-nginx
+kubectl get endpoints test-nginx2
+🔹 Notes
+
+Ensure MetalLB IP matches /etc/hosts.
+
+If NGINX shows default “Welcome to nginx” page, check ConfigMap mount and volume paths.
+
+Always do rollout restart after ConfigMap changes:
+
+kubectl rollout restart deployment <deployment-name>
+
+Two Ingress resources cannot share the same host/path, use one Ingress for multiple hosts as done in multi-host-ingress.yaml.
+
+Diagram (Conceptual)
+test1.local → Ingress → test-nginx → Pods (Node1, Node2, Node3)
+test2.local → Ingress → test-nginx2 → Pods (Node1, Node2)
+MetalLB IP: 192.168.31.241 → Routes traffic to Ingress
+
+This version is ready for sharing or using as a reference to deploy MetalLB + NGINX Ingress with multiple hosts.
