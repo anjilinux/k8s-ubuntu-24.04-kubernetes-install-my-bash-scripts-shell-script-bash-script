@@ -1,0 +1,129 @@
+
+Kubernetes Monitoring Setup: Helm + Prometheus + Grafana
+1️⃣ Install Prerequisites
+1.1 Install Helm (v3+)
+# On Ubuntu/Debian
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+helm version
+
+Verify you have Helm v3 or later.
+
+1.2 Ensure kubectl is installed and configured
+kubectl version --client
+kubectl get nodes
+
+Make sure your kubeconfig points to the cluster.
+
+2️⃣ Add Helm Repositories
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+
+Output should show:
+
+"prometheus-community" has been added to your repositories
+"grafana" has been added to your repositories
+Update Complete. ⎈Happy Helming!⎈
+3️⃣ Install kube-prometheus-stack
+helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+  -n monitoring --create-namespace
+
+Check installation:
+
+kubectl get pods -n monitoring -l "release=kube-prometheus-stack"
+4️⃣ Check Pod Status
+kubectl get pods -n monitoring -w
+
+Pods to watch:
+
+Pod	Expected Status
+grafana	3/3 Running
+kube-state-metrics	1/1 Running
+prometheus	2/2 Running
+alertmanager	2/2 Running
+operator	1/1 Running
+node-exporter	1/1 Running
+
+Wait for all pods to be fully ready; some may take 1–2 minutes.
+
+5️⃣ Access Grafana
+5.1 Get Admin Password
+kubectl get secret -n monitoring kube-prometheus-stack-grafana \
+  -o jsonpath="{.data.admin-password}" | base64 -d
+5.2 Port-Forward Grafana Service
+kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80
+
+Open browser: http://localhost:3000
+
+Username: admin
+
+Password: (from step 5.1)
+
+6️⃣ Verify Metrics in Grafana
+
+Login to Grafana.
+
+Go to Dashboards → Kubernetes → Compute Resources → Node (Pods)
+
+Go to Dashboards → Kubernetes → Compute Resources → Cluster
+
+Wait a few minutes if metrics show No data.
+
+7️⃣ Verify Prometheus Metrics
+kubectl exec -n monitoring <prometheus-pod-name> -- curl -s http://localhost:9090/metrics | head
+
+Should display raw Prometheus metrics.
+
+If empty, check kube-state-metrics and node-exporter pods.
+
+8️⃣ Grafana Data Source Check
+
+Grafana → Configuration → Data Sources → Prometheus
+
+URL: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+
+Click Save & Test → should show Data source is working.
+
+9️⃣ Access Alertmanager
+kubectl port-forward -n monitoring svc/kube-prometheus-stack-alertmanager 9093:9093
+
+Open browser: http://localhost:9093
+
+Monitor alerts and silences.
+
+🔟 Troubleshooting
+
+CrashLoopBackOff / Pod Errors:
+
+kubectl logs -n monitoring <pod-name>
+kubectl describe pod -n monitoring <pod-name>
+
+No data in Grafana:
+
+Check Prometheus targets: kubectl exec -n monitoring <prometheus-pod-name> -- curl http://localhost:9090/targets
+
+Ensure metrics are being scraped by Prometheus.
+
+Network/Port issues:
+
+Ensure local firewall allows port-forward.
+
+Use correct namespace monitoring.
+
+✅ Summary
+
+Helm installed and updated.
+
+kube-prometheus-stack deployed in namespace monitoring.
+
+Grafana accessible via http://localhost:3000.
+
+Prometheus scraping metrics from node-exporter and kube-state-metrics.
+
+Alertmanager running for alerts.
+
+Dashboards ready for CPU, Memory, Network usage, Pods, Deployments, StatefulSets, and DaemonSets.
+
+If you want, I can also create a clean “one-page quick commands cheat sheet” that you can just copy-paste in future clusters, without the explanations — super handy for repeated setups.
+
+Do you want me to make that too?
