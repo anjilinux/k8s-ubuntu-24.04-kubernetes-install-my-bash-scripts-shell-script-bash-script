@@ -1,3 +1,90 @@
+=========================================================
+#!/bin/bash
+
+DATE=$(date +%F-%H-%M)
+BACKUP_DIR=~/k8s-backup-$DATE
+
+mkdir -p $BACKUP_DIR
+cd $BACKUP_DIR
+
+echo "Starting Kubernetes Backup..."
+
+# Kubernetes resources
+kubectl get all -A -o yaml > all-resources.yaml
+kubectl get ns -o yaml > namespaces.yaml
+kubectl get configmaps -A -o yaml > configmaps.yaml
+kubectl get secrets -A -o yaml > secrets.yaml
+kubectl get svc -A -o yaml > services.yaml
+kubectl get deployments -A -o yaml > deployments.yaml
+kubectl get daemonsets -A -o yaml > daemonsets.yaml
+kubectl get statefulsets -A -o yaml > statefulsets.yaml
+kubectl get ingress -A -o yaml > ingress.yaml
+kubectl get pvc -A -o yaml > pvc.yaml
+kubectl get pv -o yaml > pv.yaml
+kubectl get storageclass -o yaml > storageclass.yaml
+kubectl get networkpolicy -A -o yaml > networkpolicy.yaml
+
+# RBAC
+kubectl get roles -A -o yaml > roles.yaml
+kubectl get rolebindings -A -o yaml > rolebindings.yaml
+kubectl get clusterroles -o yaml > clusterroles.yaml
+kubectl get clusterrolebindings -o yaml > clusterrolebindings.yaml
+
+# Monitoring configs
+cat /etc/prometheus/prometheus.yml > prometheus.yml
+cat /etc/alertmanager/alertmanager.yml > alertmanager.yml
+
+# Kubernetes control plane configs
+sudo tar -czf kubernetes-configs.tar.gz /etc/kubernetes
+
+# etcd backup
+sudo ETCDCTL_API=3 etcdctl snapshot save etcd-backup.db \
+--endpoints=https://127.0.0.1:2379 \
+--cacert=/etc/kubernetes/pki/etcd/ca.crt \
+--cert=/etc/kubernetes/pki/etcd/server.crt \
+--key=/etc/kubernetes/pki/etcd/server.key
+
+# compress backup
+cd ~
+tar -czvf k8s-backup-$DATE.tar.gz k8s-backup-$DATE
+
+echo "Backup completed: ~/k8s-backup-$DATE.tar.gz"
+
+Make script executable
+
+chmod +x k8s-full-backup.sh
+
+Run backup
+
+./k8s-full-backup.sh
+
+Verify backup
+
+ls -lh ~/k8s-backup*
+
+Example output
+
+~/k8s-backup-2026-03-10.tar.gz
+
+Restore example
+
+tar -xzvf k8s-backup-2026-03-10.tar.gz
+kubectl apply -f deployments.yaml
+
+Optional: automatic daily backup (cron)
+
+crontab -e
+
+Add line
+
+0 2 * * * /root/k8s-full-backup.sh
+
+Runs every day 2 AM.
+
+
+
+===============================================
+
 Create backup folder
 
 mkdir -p ~/cluster-backup
