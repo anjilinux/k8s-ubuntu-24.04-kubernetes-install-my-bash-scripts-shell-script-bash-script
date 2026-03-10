@@ -123,4 +123,294 @@ kubectl get --raw='/readyz?verbose'
 Dump full cluster information for deep debugging
 
 kubectl cluster-info dump | less
+List all cluster resources
+
+kubectl api-resources
+
+See everything running in the cluster
+
+kubectl get all -A
+
+Watch pods in real time
+
+kubectl get pods -A -w
+
+Show pods with node information
+
+kubectl get pods -A -o wide
+
+See services with external access
+
+kubectl get svc -A
+
+Check deployments
+
+kubectl get deployments -A
+
+Restart a deployment
+
+kubectl rollout restart deployment <deployment-name>
+
+Check rollout status
+
+kubectl rollout status deployment <deployment-name>
+
+Scale application pods
+
+kubectl scale deployment <deployment-name> --replicas=5
+
+Edit a resource quickly
+
+kubectl edit deployment <deployment-name>
+
+Forward port to a pod
+
+kubectl port-forward pod/<pod-name> 8080:80
+
+Forward port to a service
+
+kubectl port-forward svc/<service-name> 8080:80
+
+Execute command inside pod
+
+kubectl exec -it <pod-name> -- /bin/bash
+
+Copy file from pod
+
+kubectl cp <pod-name>:/file /local/path
+
+Delete all pods in a namespace
+
+kubectl delete pods --all -n <namespace>
+
+Drain a node for maintenance
+
+kubectl drain <node-name> --ignore-daemonsets
+
+Make node schedulable again
+
+kubectl uncordon <node-name>
+
+See cluster info
+
+kubectl cluster-info
+
+Show Kubernetes version
+
+kubectl version
+
+See kubeconfig contexts
+
+kubectl config get-contexts
+Check cluster information
+
+kubectl cluster-info
+
+Show Kubernetes client and server version
+
+kubectl version
+
+List all API resources
+
+kubectl api-resources
+
+List all resources in all namespaces
+
+kubectl get all -A
+
+List nodes
+
+kubectl get nodes
+
+List nodes with detailed information
+
+kubectl get nodes -o wide
+
+Watch node status continuously
+
+kubectl get nodes -w
+
+List all pods in all namespaces
+
+kubectl get pods -A
+
+Show pods with node and IP details
+
+kubectl get pods -A -o wide
+
+Watch pods in real time
+
+kubectl get pods -A -w
+
+Describe a pod
+
+kubectl describe pod <pod-name>
+
+Show logs of a pod
+
+kubectl logs <pod-name>
+
+Show logs from previous container restart
+
+kubectl logs <pod-name> --previous
+
+Execute command inside pod
+
+kubectl exec -it <pod-name> -- /bin/bash
+
+Copy file from pod to local machine
+
+kubectl cp <pod-name>:/path/file /local/path
+
+List deployments
+
+kubectl get deployments
+
+Describe deployment
+
+kubectl describe deployment <deployment-name>
+
+Restart deployment
+
+kubectl rollout restart deployment <deployment-name>
+
+Check rollout status
+
+kubectl rollout status deployment <deployment-name>
+
+Scale deployment
+
+kubectl scale deployment <deployment-name> --replicas=5
+
+Edit deployment
+
+kubectl edit deployment <deployment-name>
+
+List services
+
+kubectl get svc
+
+Show services in all namespaces
+
+kubectl get svc -A
+
+Describe service
+
+kubectl describe svc <service-name>
+
+List endpoints
+
+kubectl get endpoints
+
+List configmaps
+
+kubectl get configmaps
+
+Describe configmap
+
+kubectl describe configmap <name>
+
+List secrets
+
+kubectl get secrets
+
+Describe secret
+
+kubectl describe secret <name>
+
+Create resource from YAML
+
+kubectl apply -f file.yaml
+
+Delete resource from YAML
+
+kubectl delete -f file.yaml
+
+Delete pod
+
+kubectl delete pod <pod-name>
+
+Delete deployment
+
+kubectl delete deployment <deployment-name>
+
+List persistent volumes
+
+kubectl get pv
+
+List persistent volume claims
+
+kubectl get pvc
+
+List storage classes
+
+kubectl get storageclass
+
+Show events sorted by time
+
+kubectl get events -A --sort-by=.metadata.creationTimestamp
+
+Check node resource usage
+
+kubectl top nodes
+
+Check pod resource usage
+
+kubectl top pods -A
+
+Run temporary debug pod
+
+kubectl run debug --image=busybox -it --rm -- sh
+
+Port forward to pod
+
+kubectl port-forward pod/<pod-name> 8080:80
+
+Port forward to service
+
+kubectl port-forward svc/<service-name> 8080:80
+
+Show namespaces
+
+kubectl get namespaces
+
+Create namespace
+
+kubectl create namespace <name>
+
+Delete namespace
+
+kubectl delete namespace <name>
+
+Show ingress resources
+
+kubectl get ingress
+
+Describe ingress
+
+kubectl describe ingress <name>
+
+Show kubeconfig contexts
+
+kubectl config get-contexts
+
+Switch context
+
+kubectl config use-context <context-name>
+
+Dump cluster information for debugging
+
+kubectl cluster-info dump
+
+
+
+
+
+
+
+
+
+
+
+
 
