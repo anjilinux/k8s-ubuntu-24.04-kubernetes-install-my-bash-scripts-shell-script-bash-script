@@ -1,0 +1,15 @@
+
+kubectl get pods -A | grep -v Running
+kubectl get pods -A --sort-by='.status.containerStatuses[0].restartCount'
+kubectl top nodes
+kubectl top pods -A
+kubectl get events -A --sort-by='.lastTimestamp'
+kubectl describe pod <pod-name>
+kubectl describe node <node-name>
+kubectl run debug --image=busybox -it --rm -- sh
+kubectl get componentstatuses
+sudo ETCDCTL_API=3 etcdctl endpoint health \
+--endpoints=https://127.0.0.1:2379 \
+--cacert=/etc/kubernetes/pki/etcd/ca.crt \
+--cert=/etc/kubernetes/pki/etcd/server.crt \
+--key=/etc/kubernetes/pki/etcd/server.key
