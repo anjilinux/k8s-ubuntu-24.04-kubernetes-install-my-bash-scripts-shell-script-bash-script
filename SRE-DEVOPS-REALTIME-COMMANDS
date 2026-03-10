@@ -402,10 +402,1200 @@ Dump cluster information for debugging
 
 kubectl cluster-info dump
 
+List namespaces
 
+kubectl get ns
 
+List pods in a namespace
 
+kubectl get pods -n <namespace>
 
+Show pods with labels
+
+kubectl get pods --show-labels
+
+Filter pods by label
+
+kubectl get pods -l app=nginx
+
+Show pod YAML
+
+kubectl get pod <pod-name> -o yaml
+
+Show pod JSON
+
+kubectl get pod <pod-name> -o json
+
+Save resource YAML to file
+
+kubectl get deployment <name> -o yaml > deploy.yaml
+
+Explain Kubernetes resource fields
+
+kubectl explain pod
+
+Explain nested field
+
+kubectl explain pod.spec
+
+Check node labels
+
+kubectl get nodes --show-labels
+
+Add label to node
+
+kubectl label node <node-name> disktype=ssd
+
+Remove node label
+
+kubectl label node <node-name> disktype-
+
+Add taint to node
+
+kubectl taint nodes <node-name> key=value:NoSchedule
+
+Remove taint
+
+kubectl taint nodes <node-name> key=value:NoSchedule-
+
+Check taints on nodes
+
+kubectl describe node <node-name>
+
+Cordon a node (stop scheduling)
+
+kubectl cordon <node-name>
+
+Uncordon node
+
+kubectl uncordon <node-name>
+
+Drain node for maintenance
+
+kubectl drain <node-name> --ignore-daemonsets --delete-emptydir-data
+
+See DaemonSets
+
+kubectl get daemonsets -A
+
+See StatefulSets
+
+kubectl get statefulsets -A
+
+Restart StatefulSet
+
+kubectl rollout restart statefulset <name>
+
+List jobs
+
+kubectl get jobs
+
+List cronjobs
+
+kubectl get cronjobs
+
+Create job from cronjob
+
+kubectl create job test-job --from=cronjob/<cronjob-name>
+
+Delete completed pods
+
+kubectl delete pod --field-selector=status.phase==Succeeded
+
+Show pod IPs
+
+kubectl get pods -o wide
+
+Show service endpoints
+
+kubectl get endpoints
+
+Check network policies
+
+kubectl get networkpolicy -A
+
+Show Horizontal Pod Autoscaler
+
+kubectl get hpa
+
+Describe HPA
+
+kubectl describe hpa <name>
+
+Show resource quotas
+
+kubectl get resourcequota
+
+Show limit ranges
+
+kubectl get limitrange
+
+Create configmap from file
+
+kubectl create configmap app-config --from-file=config.yaml
+
+Create secret from literal
+
+kubectl create secret generic mysecret --from-literal=password=123456
+
+Decode secret
+
+kubectl get secret mysecret -o jsonpath="{.data.password}" | base64 -d
+
+Show cluster roles
+
+kubectl get clusterroles
+
+Show cluster role bindings
+
+kubectl get clusterrolebindings
+
+Show service accounts
+
+kubectl get serviceaccounts
+
+Describe service account
+
+kubectl describe sa <name>
+
+Generate YAML without applying
+
+kubectl create deployment nginx --image=nginx --dry-run=client -o yaml
+
+Apply YAML recursively
+
+kubectl apply -f ./configs/
+
+Delete resources by label
+
+kubectl delete pods -l app=nginx
+
+Patch resource
+
+kubectl patch deployment nginx -p '{"spec":{"replicas":3}}'
+
+Show API versions
+
+kubectl api-versions
+
+Show current context
+
+kubectl config current-context
+
+View kubeconfig
+
+kubectl config view
+
+Set namespace for current context
+
+kubectl config set-context --current --namespace=<namespace>
+
+Show running containers in pod
+
+kubectl get pod <pod-name> -o jsonpath='{.spec.containers[*].name}'
+
+Debug node using ephemeral container
+
+kubectl debug node/<node-name> -it --image=busybox
+
+Get logs of all pods in namespace
+
+kubectl logs -l app=<label> --all-containers=true
+Show pods sorted by node
+
+kubectl get pods -A -o wide --sort-by=.spec.nodeName
+
+Show pods sorted by restart count
+
+kubectl get pods -A --sort-by='.status.containerStatuses[0].restartCount'
+
+Show pods sorted by creation time
+
+kubectl get pods -A --sort-by=.metadata.creationTimestamp
+
+List pods on a specific node
+
+kubectl get pods -A -o wide | grep <node-name>
+
+Get pod IP addresses only
+
+kubectl get pods -o wide
+
+Show services with node ports
+
+kubectl get svc -o wide
+
+Show services sorted by name
+
+kubectl get svc --sort-by=.metadata.name
+
+List deployments with replica count
+
+kubectl get deployments
+
+Show rollout history of deployment
+
+kubectl rollout history deployment <deployment-name>
+
+Rollback deployment
+
+kubectl rollout undo deployment <deployment-name>
+
+Check rollout revision
+
+kubectl rollout history deployment <deployment-name> --revision=2
+
+Pause deployment rollout
+
+kubectl rollout pause deployment <deployment-name>
+
+Resume deployment rollout
+
+kubectl rollout resume deployment <deployment-name>
+
+Get pod container names
+
+kubectl get pod <pod-name> -o jsonpath='{.spec.containers[*].name}'
+
+Get pod image names
+
+kubectl get pod <pod-name> -o jsonpath='{.spec.containers[*].image}'
+
+Show node capacity
+
+kubectl describe node <node-name>
+
+List nodes with allocatable resources
+
+kubectl describe nodes | grep Allocatable -A5
+
+Check kube-system pods
+
+kubectl get pods -n kube-system
+
+Restart kube-proxy pods
+
+kubectl delete pod -n kube-system -l k8s-app=kube-proxy
+
+Restart CoreDNS pods
+
+kubectl delete pod -n kube-system -l k8s-app=kube-dns
+
+Show all daemonsets
+
+kubectl get daemonsets -A
+
+Show all statefulsets
+
+kubectl get statefulsets -A
+
+Show all jobs
+
+kubectl get jobs -A
+
+Show all cronjobs
+
+kubectl get cronjobs -A
+
+Check pod security context
+
+kubectl get pod <pod-name> -o yaml | grep securityContext -A5
+
+Check environment variables inside pod
+
+kubectl exec <pod-name> -- printenv
+
+Check open ports inside pod
+
+kubectl exec <pod-name> -- netstat -tulnp
+
+Check disk usage inside pod
+
+kubectl exec <pod-name> -- df -h
+
+Check running processes inside pod
+
+kubectl exec <pod-name> -- ps aux
+
+Check pod filesystem
+
+kubectl exec -it <pod-name> -- ls /
+
+Check service DNS inside pod
+
+kubectl exec -it <pod-name> -- nslookup kubernetes.default
+
+Check network routes inside pod
+
+kubectl exec -it <pod-name> -- ip route
+
+Check pod IP
+
+kubectl get pod <pod-name> -o wide
+
+Show endpoints for a service
+
+kubectl describe svc <service-name>
+
+Check ingress resources
+
+kubectl get ingress -A
+
+Describe ingress rules
+
+kubectl describe ingress <ingress-name>
+
+Show persistent volumes
+
+kubectl get pv
+
+Show persistent volume claims
+
+kubectl get pvc -A
+
+Describe persistent volume claim
+
+kubectl describe pvc <pvc-name>
+
+Check storage classes
+
+kubectl get storageclass
+
+Show resource quotas
+
+kubectl get resourcequota -A
+
+Show limit ranges
+
+kubectl get limitrange -A
+
+Show cluster roles
+
+kubectl get clusterroles
+
+Show cluster role bindings
+
+kubectl get clusterrolebindings
+
+Check service accounts
+
+kubectl get serviceaccounts -A
+
+Describe service account
+
+kubectl describe sa <serviceaccount-name>
+
+Check node taints
+
+kubectl describe nodes | grep Taints
+
+Show node labels
+
+kubectl get nodes --show-labels
+
+Show cluster events continuously
+
+kubectl get events -A -w
+
+Check cluster API health
+
+kubectl get --raw='/healthz'
+Show pods in all namespaces with custom columns
+
+kubectl get pods -A -o custom-columns=NAME:.metadata.name,NODE:.spec.nodeName,IP:.status.podIP
+
+List pod names only
+
+kubectl get pods -o jsonpath='{.items[*].metadata.name}'
+
+List pod images used in namespace
+
+kubectl get pods -o jsonpath='{.items[*].spec.containers[*].image}'
+
+Show container ports of a pod
+
+kubectl get pod <pod-name> -o jsonpath='{.spec.containers[*].ports[*].containerPort}'
+
+Show pod restart counts
+
+kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.containerStatuses[*].restartCount}{"\n"}{end}'
+
+List nodes with internal IPs
+
+kubectl get nodes -o wide
+
+Show node internal IP only
+
+kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.addresses[?(@.type=="InternalIP")].address}{"\n"}{end}'
+
+List services with cluster IP
+
+kubectl get svc -o custom-columns=NAME:.metadata.name,CLUSTER-IP:.spec.clusterIP
+
+Show node capacity CPU and memory
+
+kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{" CPU:"}{.status.capacity.cpu}{" MEM:"}{.status.capacity.memory}{"\n"}{end}'
+
+List pod node placement
+
+kubectl get pods -A -o custom-columns=POD:.metadata.name,NODE:.spec.nodeName
+
+List pods with namespace and IP
+
+kubectl get pods -A -o custom-columns=NAMESPACE:.metadata.namespace,POD:.metadata.name,IP:.status.podIP
+
+Show service ports
+
+kubectl get svc -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.spec.ports[*].port}{"\n"}{end}'
+
+Show NodePort services
+
+kubectl get svc --field-selector spec.type=NodePort
+
+List load balancer services
+
+kubectl get svc --field-selector spec.type=LoadBalancer
+
+Show deployment images
+
+kubectl get deployments -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.spec.template.spec.containers[*].image}{"\n"}{end}'
+
+List deployments with replicas
+
+kubectl get deploy -o custom-columns=NAME:.metadata.name,REPLICAS:.spec.replicas
+
+List pods by node using jsonpath
+
+kubectl get pods -A -o jsonpath='{range .items[*]}{.spec.nodeName}{" "}{.metadata.name}{"\n"}{end}'
+
+List container names in a pod
+
+kubectl get pod <pod-name> -o jsonpath='{.spec.containers[*].name}'
+
+List container images running in cluster
+
+kubectl get pods -A -o jsonpath='{..image}'
+
+Show persistent volume sizes
+
+kubectl get pv -o custom-columns=NAME:.metadata.name,SIZE:.spec.capacity.storage
+
+Show PVC sizes
+
+kubectl get pvc -o custom-columns=NAME:.metadata.name,SIZE:.spec.resources.requests.storage
+
+Show storage class provisioner
+
+kubectl get storageclass -o custom-columns=NAME:.metadata.name,PROVISIONER:.provisioner
+
+List namespaces with status
+
+kubectl get ns -o custom-columns=NAME:.metadata.name,STATUS:.status.phase
+
+List configmaps with namespace
+
+kubectl get configmaps -A
+
+List secrets with namespace
+
+kubectl get secrets -A
+
+Show ingress hosts
+
+kubectl get ingress -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.spec.rules[*].host}{"\n"}{end}'
+
+List service accounts with namespace
+
+kubectl get sa -A
+
+Show daemonsets with node selector
+
+kubectl get daemonsets -A -o yaml | grep nodeSelector -A3
+
+Show statefulset replicas
+
+kubectl get statefulsets -o custom-columns=NAME:.metadata.name,REPLICAS:.spec.replicas
+
+List jobs with completion status
+
+kubectl get jobs -o custom-columns=NAME:.metadata.name,COMPLETIONS:.status.succeeded
+
+List cronjobs schedules
+
+kubectl get cronjobs -o custom-columns=NAME:.metadata.name,SCHEDULE:.spec.schedule
+
+Show node taints using jsonpath
+
+kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.spec.taints}{"\n"}{end}'
+
+Show node labels
+
+kubectl get nodes --show-labels
+
+Show pod labels
+
+kubectl get pods --show-labels
+
+List pods using a label selector
+
+kubectl get pods -l app=nginx
+
+List resources by namespace
+
+kubectl get all -n <namespace>
+
+Show node architecture
+
+kubectl get nodes -o custom-columns=NAME:.metadata.name,ARCH:.status.nodeInfo.architecture
+
+Show kubelet version per node
+
+kubectl get nodes -o custom-columns=NAME:.metadata.name,KUBELET:.status.nodeInfo.kubeletVersion
+
+Show container runtime per node
+
+kubectl get nodes -o custom-columns=NAME:.metadata.name,RUNTIME:.status.nodeInfo.containerRuntimeVersion
+
+Show OS image per node
+
+kubectl get nodes -o custom-columns=NAME:.metadata.name,OS:.status.nodeInfo.osImage
+
+List pods with phase status
+
+kubectl get pods -o custom-columns=POD:.metadata.name,STATUS:.status.phase
+
+Show pod start time
+
+kubectl get pods -o custom-columns=POD:.metadata.name,START:.status.startTime
+
+Show pod host IP
+
+kubectl get pods -o custom-columns=POD:.metadata.name,HOSTIP:.status.hostIP
+
+List pods with container count
+
+kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{" "}{len(.spec.containers)}{"\n"}{end}'
+
+Show service selectors
+
+kubectl get svc -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.spec.selector}{"\n"}{end}'
+
+List pod node affinity rules
+
+kubectl get pods -o yaml | grep affinity -A5
+
+Show node allocatable resources
+
+kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{" CPU:"}{.status.allocatable.cpu}{" MEM:"}{.status.allocatable.memory}{"\n"}{end}'
+
+Show pod resource requests
+
+kubectl get pods -o yaml | grep requests -A3
+
+Show pod resource limits
+
+kubectl get pods -o yaml | grep limits -A3
+
+List all container images running in cluster
+
+kubectl get pods -A -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n' | sort | uniq
+Check cluster component status
+
+kubectl get componentstatuses
+
+Show all running containers in pods
+
+kubectl get pods -A -o jsonpath='{..containerStatuses[*].name}'
+
+Show pods with host network enabled
+
+kubectl get pods -A -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.spec.hostNetwork}{"\n"}{end}'
+
+List pods using hostPath volumes
+
+kubectl get pods -A -o yaml | grep hostPath -B5
+
+Show pods with privileged containers
+
+kubectl get pods -A -o yaml | grep privileged -B5
+
+Show pods with security context
+
+kubectl get pods -A -o yaml | grep securityContext -A5
+
+List pods with service accounts
+
+kubectl get pods -A -o custom-columns=POD:.metadata.name,SA:.spec.serviceAccountName
+
+List nodes with kubelet port
+
+kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.daemonEndpoints.kubeletEndpoint.Port}{"\n"}{end}'
+
+Show pod DNS policy
+
+kubectl get pods -A -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.spec.dnsPolicy}{"\n"}{end}'
+
+Show pod restart policy
+
+kubectl get pods -A -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.spec.restartPolicy}{"\n"}{end}'
+
+List pods with host PID enabled
+
+kubectl get pods -A -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.spec.hostPID}{"\n"}{end}'
+
+List pods with host IPC enabled
+
+kubectl get pods -A -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.spec.hostIPC}{"\n"}{end}'
+
+Show pod tolerations
+
+kubectl get pods -A -o yaml | grep tolerations -A5
+
+Show node conditions
+
+kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.conditions[*].type}{"\n"}{end}'
+
+List pods with readiness probes
+
+kubectl get pods -A -o yaml | grep readinessProbe -A3
+
+List pods with liveness probes
+
+kubectl get pods -A -o yaml | grep livenessProbe -A3
+
+Show container command arguments
+
+kubectl get pods -A -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.spec.containers[*].args}{"\n"}{end}'
+
+Show container startup commands
+
+kubectl get pods -A -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.spec.containers[*].command}{"\n"}{end}'
+
+Show container working directory
+
+kubectl get pods -A -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.spec.containers[*].workingDir}{"\n"}{end}'
+
+Show pod node selector
+
+kubectl get pods -A -o yaml | grep nodeSelector -A3
+
+Show node architecture details
+
+kubectl describe nodes | grep Architecture
+
+Show node kernel version
+
+kubectl get nodes -o custom-columns=NAME:.metadata.name,KERNEL:.status.nodeInfo.kernelVersion
+
+Show node operating system
+
+kubectl get nodes -o custom-columns=NAME:.metadata.name,OS:.status.nodeInfo.operatingSystem
+
+Show kube-proxy daemonset status
+
+kubectl get daemonset -n kube-system kube-proxy
+
+Show CoreDNS deployment status
+
+kubectl get deployment -n kube-system coredns
+
+Show Calico pods
+
+kubectl get pods -n calico-system
+
+Show kube-system services
+
+kubectl get svc -n kube-system
+
+Show cluster roles with wide output
+
+kubectl get clusterroles -o wide
+
+Show role bindings
+
+kubectl get rolebindings -A
+
+Show cluster role bindings
+
+kubectl get clusterrolebindings
+
+Show network policies
+
+kubectl get networkpolicies -A
+
+Describe network policy
+
+kubectl describe networkpolicy <name>
+
+Show endpoints with IPs
+
+kubectl get endpoints -A -o wide
+
+Show endpointslices
+
+kubectl get endpointslices -A
+
+Show Horizontal Pod Autoscalers
+
+kubectl get hpa -A
+
+Describe HPA
+
+kubectl describe hpa <name>
+
+Show PodDisruptionBudgets
+
+kubectl get pdb -A
+
+Describe PodDisruptionBudget
+
+kubectl describe pdb <name>
+
+Show node events
+
+kubectl get events --field-selector involvedObject.kind=Node
+
+Show pod events
+
+kubectl get events --field-selector involvedObject.kind=Pod
+
+Show service events
+
+kubectl get events --field-selector involvedObject.kind=Service
+
+Show deployment events
+
+kubectl get events --field-selector involvedObject.kind=Deployment
+
+Show namespace resource usage
+
+kubectl top pods -A --containers
+
+Show node resource pressure
+
+kubectl describe nodes | grep Pressure -A2
+
+Show node addresses
+
+kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.addresses[*].address}{"\n"}{end}'
+
+Show container restart reasons
+
+kubectl get pods -A -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.containerStatuses[*].lastState}{"\n"}{end}'
+
+Show pods with image pull policy
+
+kubectl get pods -A -o yaml | grep imagePullPolicy
+
+Show service external traffic policy
+
+kubectl get svc -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.spec.externalTrafficPolicy}{"\n"}{end}'
+
+Show service session affinity
+
+kubectl get svc -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.spec.sessionAffinity}{"\n"}{end}'
+
+Show pods with host aliases
+
+kubectl get pods -A -o yaml | grep hostAliases -A5
+Show pods with their namespaces and nodes
+
+kubectl get pods -A -o custom-columns=NAMESPACE:.metadata.namespace,POD:.metadata.name,NODE:.spec.nodeName
+
+Show pods with container images
+
+kubectl get pods -A -o custom-columns=POD:.metadata.name,IMAGE:.spec.containers[*].image
+
+Show pods with restart counts
+
+kubectl get pods -A -o custom-columns=POD:.metadata.name,RESTARTS:.status.containerStatuses[*].restartCount
+
+Show pods with status and IP
+
+kubectl get pods -A -o custom-columns=POD:.metadata.name,STATUS:.status.phase,IP:.status.podIP
+
+List pod labels
+
+kubectl get pods --show-labels
+
+Show deployment images and replicas
+
+kubectl get deploy -o custom-columns=NAME:.metadata.name,IMAGE:.spec.template.spec.containers[*].image,REPLICAS:.spec.replicas
+
+Show deployment strategy
+
+kubectl get deploy -o custom-columns=NAME:.metadata.name,STRATEGY:.spec.strategy.type
+
+Show services with type and ports
+
+kubectl get svc -o custom-columns=NAME:.metadata.name,TYPE:.spec.type,PORT:.spec.ports[*].port
+
+Show services with NodePort
+
+kubectl get svc -o custom-columns=NAME:.metadata.name,NODEPORT:.spec.ports[*].nodePort
+
+Show endpoints IPs
+
+kubectl get endpoints -o custom-columns=NAME:.metadata.name,ENDPOINTS:.subsets[*].addresses[*].ip
+
+Show PVC with storage request
+
+kubectl get pvc -o custom-columns=NAME:.metadata.name,STORAGE:.spec.resources.requests.storage
+
+Show PV with capacity and reclaim policy
+
+kubectl get pv -o custom-columns=NAME:.metadata.name,CAPACITY:.spec.capacity.storage,RECLAIM:.spec.persistentVolumeReclaimPolicy
+
+Show storageclass provisioner
+
+kubectl get sc -o custom-columns=NAME:.metadata.name,PROVISIONER:.provisioner
+
+Show node OS and architecture
+
+kubectl get nodes -o custom-columns=NAME:.metadata.name,OS:.status.nodeInfo.osImage,ARCH:.status.nodeInfo.architecture
+
+Show node kernel version
+
+kubectl get nodes -o custom-columns=NAME:.metadata.name,KERNEL:.status.nodeInfo.kernelVersion
+
+Show container runtime
+
+kubectl get nodes -o custom-columns=NAME:.metadata.name,RUNTIME:.status.nodeInfo.containerRuntimeVersion
+
+Show node kubelet version
+
+kubectl get nodes -o custom-columns=NAME:.metadata.name,KUBELET:.status.nodeInfo.kubeletVersion
+
+Show namespaces and status
+
+kubectl get ns -o custom-columns=NAME:.metadata.name,STATUS:.status.phase
+
+Show ingress hosts
+
+kubectl get ingress -o custom-columns=NAME:.metadata.name,HOST:.spec.rules[*].host
+
+Show cronjobs schedules
+
+kubectl get cronjobs -o custom-columns=NAME:.metadata.name,SCHEDULE:.spec.schedule
+
+Show jobs completions
+
+kubectl get jobs -o custom-columns=NAME:.metadata.name,SUCCEEDED:.status.succeeded
+
+Show daemonsets desired/current pods
+
+kubectl get daemonsets -o custom-columns=NAME:.metadata.name,DESIRED:.status.desiredNumberScheduled,CURRENT:.status.currentNumberScheduled
+
+Show statefulset replicas
+
+kubectl get statefulsets -o custom-columns=NAME:.metadata.name,REPLICAS:.spec.replicas
+
+Show service accounts
+
+kubectl get sa -A
+
+Show secrets with type
+
+kubectl get secrets -o custom-columns=NAME:.metadata.name,TYPE:.type
+
+Show configmaps with namespace
+
+kubectl get configmaps -A
+
+Show network policies
+
+kubectl get networkpolicies -A
+
+Show Horizontal Pod Autoscalers
+
+kubectl get hpa -A
+
+Show PodDisruptionBudgets
+
+kubectl get pdb -A
+
+Show node labels
+
+kubectl get nodes --show-labels
+
+Show pod annotations
+
+kubectl get pods -o custom-columns=POD:.metadata.name,ANNOTATIONS:.metadata.annotations
+
+Show node internal IP
+
+kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.addresses[?(@.type=="InternalIP")].address}{"\n"}{end}'
+
+Show pod host IP
+
+kubectl get pods -o custom-columns=POD:.metadata.name,HOSTIP:.status.hostIP
+
+Show pod start time
+
+kubectl get pods -o custom-columns=POD:.metadata.name,START:.status.startTime
+
+Show pod node placement
+
+kubectl get pods -o custom-columns=POD:.metadata.name,NODE:.spec.nodeName
+
+Show container ports
+
+kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.spec.containers[*].ports[*].containerPort}{"\n"}{end}'
+
+Show container commands
+
+kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.spec.containers[*].command}{"\n"}{end}'
+
+Show container arguments
+
+kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.spec.containers[*].args}{"\n"}{end}'
+
+Show pod DNS policy
+
+kubectl get pods -o custom-columns=POD:.metadata.name,DNS:.spec.dnsPolicy
+
+Show pod restart policy
+
+kubectl get pods -o custom-columns=POD:.metadata.name,RESTART:.spec.restartPolicy
+
+Show pod service account
+
+kubectl get pods -o custom-columns=POD:.metadata.name,SA:.spec.serviceAccountName
+
+Show node taints
+
+kubectl describe nodes | grep Taints
+
+Show cluster events
+
+kubectl get events -A
+
+Watch events live
+
+kubectl get events -A -w
+
+Show node CPU and memory usage
+
+kubectl top nodes
+
+Show pod CPU and memory usage
+
+kubectl top pods -A
+
+Show containers resource usage
+
+kubectl top pods -A --containers
+
+Show cluster API health
+
+kubectl get --raw='/healthz'
+
+Show API resources
+
+kubectl api-resources
+
+Show API versions
+
+kubectl api-versions
+Show pods grouped by namespace
+
+kubectl get pods -A --sort-by=.metadata.namespace
+
+Show pods grouped by node
+
+kubectl get pods -A -o wide --sort-by=.spec.nodeName
+
+Show pods grouped by start time
+
+kubectl get pods -A --sort-by=.status.startTime
+
+Show pods with node and IP
+
+kubectl get pods -A -o wide
+
+Show only running pods
+
+kubectl get pods -A --field-selector=status.phase=Running
+
+Show failed pods
+
+kubectl get pods -A --field-selector=status.phase=Failed
+
+Show pending pods
+
+kubectl get pods -A --field-selector=status.phase=Pending
+
+Show pods restarting frequently
+
+kubectl get pods -A --sort-by='.status.containerStatuses[0].restartCount'
+
+Show pod restart count live
+
+watch kubectl get pods -A
+
+Show pods per node quickly
+
+kubectl get pods -A -o wide | awk '{print $8}' | sort | uniq -c
+
+Show deployments across cluster
+
+kubectl get deployments -A
+
+Show services across cluster
+
+kubectl get svc -A
+
+Show ingress resources
+
+kubectl get ingress -A
+
+Show daemonsets across cluster
+
+kubectl get daemonsets -A
+
+Show statefulsets across cluster
+
+kubectl get statefulsets -A
+
+Show jobs across cluster
+
+kubectl get jobs -A
+
+Show cronjobs across cluster
+
+kubectl get cronjobs -A
+
+Show persistent volumes
+
+kubectl get pv
+
+Show persistent volume claims
+
+kubectl get pvc -A
+
+Show storage classes
+
+kubectl get sc
+
+Show namespaces
+
+kubectl get ns
+
+Show configmaps across cluster
+
+kubectl get configmaps -A
+
+Show secrets across cluster
+
+kubectl get secrets -A
+
+Show service accounts
+
+kubectl get sa -A
+
+Show roles across cluster
+
+kubectl get roles -A
+
+Show role bindings
+
+kubectl get rolebindings -A
+
+Show cluster roles
+
+kubectl get clusterroles
+
+Show cluster role bindings
+
+kubectl get clusterrolebindings
+
+Show network policies
+
+kubectl get networkpolicies -A
+
+Show endpoints across cluster
+
+kubectl get endpoints -A
+
+Show endpoint slices
+
+kubectl get endpointslices -A
+
+Show Horizontal Pod Autoscalers
+
+kubectl get hpa -A
+
+Show PodDisruptionBudgets
+
+kubectl get pdb -A
+
+Show node labels
+
+kubectl get nodes --show-labels
+
+Show node taints
+
+kubectl describe nodes | grep Taints
+
+Show node capacity
+
+kubectl describe nodes | grep Capacity -A5
+
+Show node allocatable resources
+
+kubectl describe nodes | grep Allocatable -A5
+
+Show node conditions
+
+kubectl describe nodes | grep Conditions -A5
+
+Show node addresses
+
+kubectl get nodes -o wide
+
+Show cluster events
+
+kubectl get events -A
+
+Watch cluster events live
+
+kubectl get events -A -w
+
+Show CPU usage per node
+
+kubectl top nodes
+
+Show CPU usage per pod
+
+kubectl top pods -A
+
+Show container level usage
+
+kubectl top pods -A --containers
+
+Show API resources
+
+kubectl api-resources
+
+Show API versions
+
+kubectl api-versions
+
+Show cluster info
+
+kubectl cluster-info
+
+Dump cluster debug info
+
+kubectl cluster-info dump
+
+Show Kubernetes version
+
+kubectl version
+
+Show kubeconfig contexts
+
+kubectl config get-contexts
 
 
 
