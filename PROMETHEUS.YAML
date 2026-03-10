@@ -1,0 +1,214 @@
+cat /etc/prometheus/prometheus.yml
+root@master1:~# cat /etc/prometheus/prometheus.yml
+# my global config
+global:
+  scrape_interval: 15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+  # scrape_timeout is set to the global default (10s).
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:   ['localhost:9093'] 
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+   - "alerts.yml"
+  # - "second_rules.yml"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: "prometheus"
+
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+
+    static_configs:
+      - targets: ["127.0.0.1:9090"]
+       # The label name is added as a label `label_name=<label_value>` to any timeseries scraped from this config.
+        labels:
+          app: "prometheus"
+
+  # Node Exporter
+#  - job_name: 'node_exporter'
+ #   static_configs:
+  #    - targets: ["localhost:9100"]
+   #     labels:
+    #      app: "node_exporter"
+
+
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets:
+          - "192.168.31.67:9100"     # master1
+          - "192.168.122.151:9100"   # master2
+          - "192.168.122.198:9100"   # master3
+          - "192.168.122.155:9100"   # worker2
+          - "192.168.122.232:9100"   # worker1
+        labels:
+          app: "node_exporter"
+
+
+  - job_name: "alertmanager"
+    static_configs:
+      - targets: ["localhost:9093"]
+
+  - job_name: "jenkins"
+    metrics_path: /prometheus
+    static_configs:
+      - targets: ["localhost:8080"]
+
+  - job_name: 'mlflow-metrics'
+    static_configs:
+      - targets: ['localhost:9105']
+
+
+###########################################################
+
+
+
+  - job_name: 'kube-state-metrics'
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - 192.168.31.67:30080
+
+###########################################
+
+
+  - job_name: 'kubelet-worker2'
+    scheme: https
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - 192.168.31.67:10250
+    tls_config:
+      insecure_skip_verify: true
+
+
+#  - job_name: 'mlflow-server'
+#    metrics_path: /metrics
+#    static_configs:
+#      - targets: ['localhost:5000']
+root@master1:~# 
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+root@master1:~# cat /etc/alertmanager/alertmanager.yml
+global:
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'aanjireddy2024@gmail.com'
+  smtp_auth_username: 'aanjireddy2024@gmail.com'
+  smtp_auth_password: 'eaorjy'
+  smtp_require_tls: true
+
+route:
+  receiver: 'email-alert'
+  group_wait: 10s
+  group_interval: 30s
+  repeat_interval: 1h
+
+receivers:
+- name: 'email-alert'
+  email_configs:
+  - to: 'aanjireddy2024@gmail.com'
+    send_resolved: true
+root@master1:~# 
+root@master1:~# 
+
+root@master1:~# 
+root@master1:~# cat /etc/kubernetes/manifests/etcd.yaml 
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kubeadm.kubernetes.io/etcd.advertise-client-urls: https://192.168.31.67:2379
+  creationTimestamp: null
+  labels:
+    component: etcd
+    tier: control-plane
+  name: etcd
+  namespace: kube-system
+spec:
+  containers:
+  - command:
+    - etcd
+    - --advertise-client-urls=https://192.168.31.67:2379
+    - --cert-file=/etc/kubernetes/pki/etcd/server.crt
+    - --client-cert-auth=true
+    - --data-dir=/var/lib/etcd
+    - --experimental-initial-corrupt-check=true
+    - --experimental-watch-progress-notify-interval=5s
+    - --initial-advertise-peer-urls=https://192.168.31.67:2380
+    - --initial-cluster=master1=https://192.168.31.67:2380
+    - --key-file=/etc/kubernetes/pki/etcd/server.key
+    - --listen-client-urls=https://127.0.0.1:2379,https://192.168.31.67:2379
+    - --listen-metrics-urls=http://127.0.0.1:2381
+    - --listen-peer-urls=https://192.168.31.67:2380
+    - --name=master1
+    - --peer-cert-file=/etc/kubernetes/pki/etcd/peer.crt
+    - --peer-client-cert-auth=true
+    - --peer-key-file=/etc/kubernetes/pki/etcd/peer.key
+    - --peer-trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt
+    - --snapshot-count=10000
+    - --trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt
+    image: registry.k8s.io/etcd:3.5.24-0
+    imagePullPolicy: IfNotPresent
+    livenessProbe:
+      failureThreshold: 8
+      httpGet:
+        host: 127.0.0.1
+        path: /livez
+        port: 2381
+        scheme: HTTP
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 15
+    name: etcd
+    readinessProbe:
+      failureThreshold: 3
+      httpGet:
+        host: 127.0.0.1
+        path: /readyz
+        port: 2381
+        scheme: HTTP
+      periodSeconds: 1
+      timeoutSeconds: 15
+    resources:
+      requests:
+        cpu: 100m
+        memory: 100Mi
+    startupProbe:
+      failureThreshold: 24
+      httpGet:
+        host: 127.0.0.1
+        path: /readyz
+        port: 2381
+        scheme: HTTP
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 15
+    volumeMounts:
+    - mountPath: /var/lib/etcd
+      name: etcd-data
+    - mountPath: /etc/kubernetes/pki/etcd
+      name: etcd-certs
+  hostNetwork: true
+  priority: 2000001000
+  priorityClassName: system-node-critical
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  volumes:
+  - hostPath:
+      path: /etc/kubernetes/pki/etcd
+      type: DirectoryOrCreate
+    name: etcd-certs
+  - hostPath:
+      path: /var/lib/etcd
+      type: DirectoryOrCreate
+    name: etcd-data
+Backup Prometheus config
