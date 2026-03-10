@@ -1,4 +1,4 @@
-Cluster Information
+1. Cluster Information
 kubectl cluster-info
 kubectl version
 kubectl api-resources
@@ -11,148 +11,224 @@ kubectl config current-context
 kubectl config view
 kubectl config use-context <context-name>
 kubectl config set-context --current --namespace=<namespace>
-Nodes
+2. Nodes
 kubectl get nodes
 kubectl get nodes -o wide
 kubectl get nodes -w
 kubectl get nodes --show-labels
 kubectl describe node <node-name>
+
 kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.addresses[?(@.type=="InternalIP")].address}{"\n"}{end}'
+
 kubectl cordon <node-name>
 kubectl uncordon <node-name>
 kubectl drain <node-name> --ignore-daemonsets --delete-emptydir-data
+
 kubectl label node <node-name> key=value
 kubectl label node <node-name> key-
+
 kubectl taint nodes <node-name> key=value:NoSchedule
 kubectl taint nodes <node-name> key=value:NoSchedule-
+
 kubectl debug node/<node-name> -it --image=busybox
-Pods
+3. Pods
+kubectl get pods
 kubectl get pods -A
 kubectl get pods -A -o wide
 kubectl get pods -A -w
+
+kubectl get pods -A --show-labels
+kubectl get pods -l app=nginx
+kubectl get pods -n <namespace>
+
 kubectl get pods -A | grep -v Running
-kubectl get pods -A --sort-by=.spec.nodeName
-kubectl get pods -A --sort-by='.status.containerStatuses[0].restartCount'
 kubectl get pods -A --field-selector=status.phase=Running
 kubectl get pods -A --field-selector=status.phase=Pending
 kubectl get pods -A --field-selector=status.phase=Failed
-kubectl get pods -n <namespace>
+
+kubectl get pods -A --sort-by=.spec.nodeName
+kubectl get pods -A --sort-by='.status.containerStatuses[0].restartCount'
+
 kubectl describe pod <pod-name>
+
 kubectl logs <pod-name>
 kubectl logs <pod-name> --previous
 kubectl logs -l app=<label> --all-containers=true
+
 kubectl exec -it <pod-name> -- /bin/bash
 kubectl cp <pod-name>:/path/file /local/path
+
 kubectl delete pod <pod-name>
 kubectl delete pods --all -n <namespace>
 kubectl delete pod --field-selector=status.phase==Succeeded
-watch kubectl get pods -A
-kubectl get pods --show-labels
-kubectl get pods -l app=nginx
+
 kubectl get pod <pod-name> -o yaml
 kubectl get pod <pod-name> -o json
-Deployments
+
+watch kubectl get pods -A
+4. Deployments
 kubectl get deployments
 kubectl get deployments -A
+
 kubectl describe deployment <deployment-name>
+
 kubectl rollout restart deployment <deployment-name>
 kubectl rollout status deployment <deployment-name>
 kubectl rollout history deployment <deployment-name>
 kubectl rollout undo deployment <deployment-name>
+
 kubectl scale deployment <deployment-name> --replicas=5
+
 kubectl edit deployment <deployment-name>
+
 kubectl patch deployment <name> -p '{"spec":{"replicas":3}}'
-Services & Networking
+5. Services & Networking
 kubectl get svc
 kubectl get svc -A
+
 kubectl describe svc <service-name>
+
 kubectl get endpoints
 kubectl get endpoints -A
+
 kubectl get endpointslices -A
+
 kubectl get networkpolicies -A
 kubectl describe networkpolicy <name>
+
 kubectl port-forward pod/<pod-name> 8080:80
 kubectl port-forward svc/<service-name> 8080:80
+
 kubectl get svc --field-selector spec.type=NodePort
 kubectl get svc --field-selector spec.type=LoadBalancer
-Ingress
+6. Ingress
 kubectl get ingress
 kubectl get ingress -A
 kubectl describe ingress <name>
-Namespaces
+7. Namespaces
 kubectl get ns
-kubectl get namespaces
 kubectl create namespace <name>
 kubectl delete namespace <name>
 kubectl get all -n <namespace>
-Storage
+8. Storage
 kubectl get pv
 kubectl get pvc
 kubectl get pvc -A
+
 kubectl describe pvc <pvc-name>
+
 kubectl get storageclass
-ConfigMaps & Secrets
+kubectl get sc
+9. ConfigMaps & Secrets
 kubectl get configmaps
 kubectl get configmaps -A
 kubectl describe configmap <name>
+
 kubectl create configmap app-config --from-file=config.yaml
+
 kubectl get secrets
 kubectl get secrets -A
 kubectl describe secret <name>
+
 kubectl create secret generic mysecret --from-literal=password=123456
+
 kubectl get secret mysecret -o jsonpath="{.data.password}" | base64 -d
-RBAC
+10. RBAC
 kubectl get roles -A
 kubectl get rolebindings -A
+
 kubectl get clusterroles
 kubectl get clusterrolebindings
+
 kubectl get serviceaccounts
 kubectl get serviceaccounts -A
+
 kubectl describe sa <name>
-Workloads
+11. Workloads
 kubectl get daemonsets -A
 kubectl get statefulsets -A
+
 kubectl rollout restart statefulset <name>
+
 kubectl get jobs
 kubectl get jobs -A
+
 kubectl get cronjobs
 kubectl get cronjobs -A
+
 kubectl create job test-job --from=cronjob/<cronjob-name>
-Autoscaling & Policies
+12. Autoscaling & Policies
 kubectl get hpa
 kubectl get hpa -A
 kubectl describe hpa <name>
+
 kubectl get pdb -A
 kubectl describe pdb <name>
+
 kubectl get resourcequota
 kubectl get resourcequota -A
+
 kubectl get limitrange
 kubectl get limitrange -A
-Monitoring & Metrics
+13. Monitoring & Metrics
 kubectl top nodes
 kubectl top pods -A
 kubectl top pods -A --containers
+
 kubectl get events -A
 kubectl get events -A -w
 kubectl get events -A --sort-by=.metadata.creationTimestamp
+
 kubectl get events --field-selector involvedObject.kind=Node
 kubectl get events --field-selector involvedObject.kind=Pod
 kubectl get events --field-selector involvedObject.kind=Service
 kubectl get events --field-selector involvedObject.kind=Deployment
-Debugging
+14. Debugging
 kubectl run debug --image=busybox -it --rm -- sh
+
 kubectl explain pod
 kubectl explain pod.spec
+
 kubectl get pods -A -o jsonpath="{..image}" | tr -s '[[:space:]]' '\n' | sort | uniq
-System Components
+15. System Components
 kubectl get pods -n kube-system
-kubectl delete pod -n kube-system -l k8s-app=kube-proxy
-kubectl delete pod -n kube-system -l k8s-app=kube-dns
+
 kubectl get daemonset -n kube-system kube-proxy
 kubectl get deployment -n kube-system coredns
-etcd Health (Control Plane)
+
+kubectl delete pod -n kube-system -l k8s-app=kube-dns
+kubectl delete pod -n kube-system -l k8s-app=kube-proxy
+kubectl delete pod -n calico-system --all
+16. etcd Health (Control Plane)
 sudo ETCDCTL_API=3 etcdctl endpoint health \
 --endpoints=https://127.0.0.1:2379 \
 --cacert=/etc/kubernetes/pki/etcd/ca.crt \
 --cert=/etc/kubernetes/pki/etcd/server.crt \
 --key=/etc/kubernetes/pki/etcd/server.key
+17. Linux Node Debugging (SRE Level)
+sudo crictl ps | grep kube
+sudo crictl logs <container-id>
+
+sudo systemctl status kubelet
+sudo journalctl -u kubelet -n 50
+
+sudo systemctl status containerd
+sudo journalctl -u containerd -n 50
+
+ss -tulpn | grep 6443
+18. Network Testing Inside Cluster
+kubectl run debug --image=busybox -it --rm -- sh
+
+nslookup kubernetes.default
+wget -qO- http://<service-name>
+19. Quick Cluster Health Checks (SRE)
+kubectl get nodes
+kubectl get pods -A | grep -v Running
+kubectl get pods -n kube-system
+kubectl top nodes
+kubectl get events -A --sort-by=.metadata.creationTimestamp | tail
+kubectl get svc -A
+kubectl get ingress -A
+kubectl get pvc -A
+kubectl get daemonsets -A
+kubectl cluster-info
