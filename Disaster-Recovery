@@ -1,0 +1,56 @@
+Disaster-Recovery
+
+Kubernetes 10-Command Emergency Backup Checklist
+1. Create backup folder
+mkdir -p ~/k8s-emergency-backup
+cd ~/k8s-emergency-backup
+2. Backup etcd snapshot (MOST IMPORTANT)
+sudo ETCDCTL_API=3 etcdctl snapshot save etcd-snapshot.db \
+--endpoints=https://127.0.0.1:2379 \
+--cacert=/etc/kubernetes/pki/etcd/ca.crt \
+--cert=/etc/kubernetes/pki/etcd/server.crt \
+--key=/etc/kubernetes/pki/server.key
+3. Backup Kubernetes control plane configs
+sudo tar -czvf kubernetes-configs.tar.gz /etc/kubernetes
+4. Backup etcd data directory
+sudo tar -czvf etcd-data.tar.gz /var/lib/etcd
+5. Backup all Kubernetes resources
+kubectl get all -A -o yaml > all-resources.yaml
+6. Backup ConfigMaps and Secrets
+kubectl get configmaps,secrets -A -o yaml > configs-secrets.yaml
+7. Backup RBAC permissions
+kubectl get clusterroles,clusterrolebindings,roles,rolebindings -A -o yaml > rbac.yaml
+8. Backup storage resources
+kubectl get pv,pvc,storageclass -A -o yaml > storage.yaml
+9. Backup networking resources
+kubectl get svc,ingress,networkpolicy -A -o yaml > networking.yaml
+10. Compress everything
+cd ~
+tar -czvf k8s-emergency-backup.tar.gz k8s-emergency-backup
+Verify backup
+ls -lh ~/k8s-emergency-backup.tar.gz
+Restore example
+tar -xzvf k8s-emergency-backup.tar.gz
+kubectl apply -f all-resources.yaml
+
+When SRE teams run this
+
+Before:
+
+Kubernetes upgrade
+
+Node replacement
+
+Control plane restart
+
+Network plugin changes
+
+Storage migration
+
+etcd maintenance
+
+✅ Pro Tip (Production clusters):
+
+Always run backup before kubeadm upgrade
+
+kubeadm upgrade plan
