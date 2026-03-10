@@ -42,9 +42,38 @@ kubectl exec -n monitoring <prometheus-pod-name> -- curl http://localhost:9090/t
 
 ##################################################################+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
++---------------------+
+|    Kubernetes       |
+|   Cluster Nodes     |
++----------+----------+
+           |
+           v
++---------------------+
+|       Helm          |
+|  (Package Manager)  |
++----------+----------+
+           |
+           v
++-------------------------------+
+|  kube-prometheus-stack Chart  |
+|  (Prometheus Operator +       |
+|   Prometheus + Grafana +      |
+|   Alertmanager + Node Exporter)|
++-----------+-------------------+
+            |
+            v
++-------------------+   +------------------+   +----------------------+
+|   Prometheus      |   |     Grafana      |   |   Alertmanager        |
+|  Metrics Storage  |   | Dashboards &     |   | Alerts & Notifications|
+|  & Scraping       |   | Visualization   |   | Management           |
++-------------------+   +------------------+   +----------------------+
+            ^
+            |
+     Scrapes metrics from
+     nodes, pods, containers
 
 
-
+=======================================================================
 Kubernetes Monitoring Setup: Helm + Prometheus + Grafana
 1️⃣ Install Prerequisites
 1.1 Install Helm (v3+)
