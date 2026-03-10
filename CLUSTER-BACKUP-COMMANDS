@@ -1,0 +1,198 @@
+Create backup folder
+
+mkdir -p ~/cluster-backup
+cd ~/cluster-backup
+
+Backup Prometheus config
+
+cat /etc/prometheus/prometheus.yml > backup-prometheus.yml
+
+Backup Alertmanager config
+
+cat /etc/alertmanager/alertmanager.yml > backup-alertmanager.yml
+
+Backup Grafana config (if installed)
+
+cat /etc/grafana/grafana.ini > backup-grafana.ini
+
+Backup Kubernetes kubeconfig
+
+cat /etc/kubernetes/admin.conf > backup-admin.conf
+
+Backup kube-apiserver manifest
+
+cat /etc/kubernetes/manifests/kube-apiserver.yaml > backup-kube-apiserver.yaml
+
+Backup kube-controller-manager manifest
+
+cat /etc/kubernetes/manifests/kube-controller-manager.yaml > backup-kube-controller-manager.yaml
+
+Backup kube-scheduler manifest
+
+cat /etc/kubernetes/manifests/kube-scheduler.yaml > backup-kube-scheduler.yaml
+
+Backup etcd manifest
+
+cat /etc/kubernetes/manifests/etcd.yaml > backup-etcd.yaml
+
+Backup Kubernetes certificates
+
+sudo tar -czvf backup-k8s-certificates.tar.gz /etc/kubernetes/pki
+
+Backup etcd data directory
+
+sudo tar -czvf backup-etcd-data.tar.gz /var/lib/etcd
+
+Backup container runtime config
+
+cat /etc/containerd/config.toml > backup-containerd-config.toml
+
+Backup kubelet config
+
+cat /var/lib/kubelet/config.yaml > backup-kubelet-config.yaml
+
+Backup CNI network config
+
+sudo tar -czvf backup-cni-config.tar.gz /etc/cni/net.d
+
+Backup sysctl config
+
+cat /etc/sysctl.conf > backup-sysctl.conf
+
+Backup hosts file
+
+cat /etc/hosts > backup-hosts
+
+Backup DNS resolver
+
+cat /etc/resolv.conf > backup-resolv.conf
+
+Backup kubelet service config
+
+cat /etc/systemd/system/kubelet.service.d/10-kubeadm.conf > backup-kubelet-service.conf
+
+Backup entire Kubernetes resources
+
+All resources
+
+kubectl get all -A -o yaml > all-resources.yaml
+
+Namespaces
+
+kubectl get ns -o yaml > namespaces.yaml
+
+ConfigMaps
+
+kubectl get configmaps -A -o yaml > configmaps.yaml
+
+Secrets
+
+kubectl get secrets -A -o yaml > secrets.yaml
+
+Deployments
+
+kubectl get deployments -A -o yaml > deployments.yaml
+
+DaemonSets
+
+kubectl get daemonsets -A -o yaml > daemonsets.yaml
+
+StatefulSets
+
+kubectl get statefulsets -A -o yaml > statefulsets.yaml
+
+Services
+
+kubectl get svc -A -o yaml > services.yaml
+
+Ingress
+
+kubectl get ingress -A -o yaml > ingress.yaml
+
+Persistent volumes
+
+kubectl get pv -o yaml > pv.yaml
+
+Persistent volume claims
+
+kubectl get pvc -A -o yaml > pvc.yaml
+
+Storage classes
+
+kubectl get storageclass -o yaml > storageclass.yaml
+
+Network policies
+
+kubectl get networkpolicy -A -o yaml > networkpolicy.yaml
+
+Roles
+
+kubectl get roles -A -o yaml > roles.yaml
+
+Role bindings
+
+kubectl get rolebindings -A -o yaml > rolebindings.yaml
+
+Cluster roles
+
+kubectl get clusterroles -o yaml > clusterroles.yaml
+
+Cluster role bindings
+
+kubectl get clusterrolebindings -o yaml > clusterrolebindings.yaml
+
+HPA
+
+kubectl get hpa -A -o yaml > hpa.yaml
+
+CronJobs
+
+kubectl get cronjobs -A -o yaml > cronjobs.yaml
+
+Backup etcd snapshot (most important)
+
+ETCDCTL_API=3 etcdctl snapshot save etcd-backup.db \
+--endpoints=https://127.0.0.1:2379 \
+--cacert=/etc/kubernetes/pki/etcd/ca.crt \
+--cert=/etc/kubernetes/pki/etcd/server.crt \
+--key=/etc/kubernetes/pki/etcd/server.key
+
+Backup entire Kubernetes control-plane configs
+
+sudo tar -czvf kube-control-plane-configs.tar.gz /etc/kubernetes
+
+Combine critical configs for quick reference
+
+cat /etc/prometheus/prometheus.yml \
+/etc/alertmanager/alertmanager.yml \
+/etc/kubernetes/manifests/etcd.yaml \
+/etc/kubernetes/manifests/kube-apiserver.yaml \
+/etc/kubernetes/manifests/kube-controller-manager.yaml \
+/etc/kubernetes/manifests/kube-scheduler.yaml \
+> cluster-critical-configs.txt
+
+Compress full backup
+
+tar -czvf kubernetes-full-backup.tar.gz ~/cluster-backup
+
+Verify backup
+
+ls -lh ~/cluster-backup
+
+Restore example
+
+kubectl apply -f all-resources.yaml
+
+Extract backup
+
+tar -xzvf kubernetes-full-backup.tar.gz
+
+Optional automatic daily backup
+
+crontab -e
+
+Add:
+
+0 2 * * * /root/k8s-full-backup.sh
+
+Runs every day at 2 AM
