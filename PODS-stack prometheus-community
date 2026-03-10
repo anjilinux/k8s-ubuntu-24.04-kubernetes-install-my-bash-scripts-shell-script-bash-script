@@ -1,3 +1,49 @@
+####################################################################################+++++++++++++++++++++++++++++++++++++
+# 1️⃣ Install Helm
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+helm version
+
+# 2️⃣ Verify kubectl
+kubectl version --client
+kubectl get nodes
+
+# 3️⃣ Add Helm Repos
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+
+# 4️⃣ Install kube-prometheus-stack
+helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+  -n monitoring --create-namespace
+
+# 5️⃣ Check pods
+kubectl get pods -n monitoring -w
+
+# 6️⃣ Get Grafana admin password
+kubectl get secret -n monitoring kube-prometheus-stack-grafana \
+  -o jsonpath="{.data.admin-password}" | base64 -d
+
+# 7️⃣ Port-forward Grafana
+kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80
+# Open browser: http://localhost:3000
+
+# 8️⃣ Port-forward Alertmanager (optional)
+kubectl port-forward -n monitoring svc/kube-prometheus-stack-alertmanager 9093:9093
+# Open browser: http://localhost:9093
+
+# 9️⃣ Prometheus access (optional)
+kubectl port-forward -n monitoring svc/kube-prometheus-stack-prometheus 9090:9090
+# Open browser: http://localhost:9090
+
+# 🔧 Troubleshooting
+kubectl logs -n monitoring <pod-name>
+kubectl describe pod -n monitoring <pod-name>
+kubectl exec -n monitoring <prometheus-pod-name> -- curl http://localhost:9090/targets
+
+##################################################################+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
 
 Kubernetes Monitoring Setup: Helm + Prometheus + Grafana
 1️⃣ Install Prerequisites
