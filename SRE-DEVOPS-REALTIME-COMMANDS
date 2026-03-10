@@ -13,3 +13,114 @@ sudo ETCDCTL_API=3 etcdctl endpoint health \
 --cacert=/etc/kubernetes/pki/etcd/ca.crt \
 --cert=/etc/kubernetes/pki/etcd/server.crt \
 --key=/etc/kubernetes/pki/etcd/server.key
+Check pods that are not running
+
+kubectl get pods -A | grep -v Running
+
+Find pods that are restarting frequently
+
+kubectl get pods -A --sort-by='.status.containerStatuses[0].restartCount'
+
+Check node CPU and memory usage
+
+kubectl top nodes
+
+Check resource usage of all pods
+
+kubectl top pods -A
+
+View recent cluster events
+
+kubectl get events -A --sort-by='.lastTimestamp'
+
+See detailed information and events for a pod
+
+kubectl describe pod <pod-name>
+
+Check node health conditions
+
+kubectl describe node <node-name>
+
+Test network connectivity from a temporary debug pod
+
+kubectl run debug --image=busybox -it --rm -- sh
+
+Check cluster control-plane component status
+
+kubectl get componentstatuses
+
+Verify etcd health on a control-plane node
+
+sudo ETCDCTL_API=3 etcdctl endpoint health \
+--endpoints=https://127.0.0.1:2379 \
+--cacert=/etc/kubernetes/pki/etcd/ca.crt \
+--cert=/etc/kubernetes/pki/etcd/server.crt \
+--key=/etc/kubernetes/pki/etcd/server.key
+
+Troubleshoot pods stuck in Pending
+
+kubectl describe pod <pod-name>
+
+Check logs when pod is crashing
+
+kubectl logs <pod-name>
+kubectl logs <pod-name> --previous
+
+Investigate image pull problems
+
+kubectl describe pod <pod-name>
+
+Verify services and endpoints when apps are unreachable
+
+kubectl get svc
+kubectl get endpoints
+
+Test cluster DNS from a temporary pod
+
+kubectl run test --image=busybox -it --rm -- sh
+nslookup kubernetes.default
+
+Diagnose nodes that become NotReady
+
+kubectl describe node <node-name>
+sudo systemctl restart kubelet
+
+Check external access when using MetalLB
+
+kubectl get svc
+kubectl get pods -n metallb-system
+
+Debug ingress routing
+
+kubectl get pods -n ingress-nginx
+kubectl describe ingress
+
+Detect pods consuming high CPU or memory
+
+kubectl top pods -A
+
+Check persistent volume claim binding issues
+
+kubectl get pvc
+kubectl get storageclass
+
+List network policies that may block traffic
+
+kubectl get networkpolicy -A
+
+Inspect pods scheduled on a specific node
+
+kubectl get pods -A -o wide
+
+Identify pods killed due to memory limits
+
+kubectl describe pod <pod-name>
+
+Check Kubernetes API server readiness
+
+kubectl get --raw='/readyz?verbose'
+
+Dump full cluster information for deep debugging
+
+kubectl cluster-info dump | less
+
