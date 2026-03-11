@@ -1,0 +1,135 @@
+Kubernetes Metrics Server Setup & Troubleshooting Guide
+1. Metrics Server Overview
+
+Purpose:
+The Metrics Server collects resource usage data (CPU, memory) from nodes and pods. It's required for commands like:
+
+kubectl top nodes
+kubectl top pods
+
+Without it, these commands fail or show no data.
+
+2. Prerequisites
+
+Kubernetes cluster up and running (v1.32.x in your case)
+
+All nodes in Ready state:
+
+kubectl get nodes -o wide
+
+Network plugin (Calico, Flannel, etc.) properly installed
+
+Kubelet running on all nodes
+
+3. Installing Metrics Server
+
+Download or create the Metrics Server manifest:
+
+curl -LO https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+Or create a custom manifest metrics-server-fix.yaml.
+
+Apply the manifest:
+
+kubectl apply -f metrics-server-fix.yaml
+
+Restart deployment to ensure new configuration is applied:
+
+kubectl rollout restart deployment metrics-server -n kube-system
+4. Recommended Configuration Fixes
+
+Host networking if your cluster has network policies blocking pod-to-pod communication:
+
+spec:
+  hostNetwork: true
+  dnsPolicy: ClusterFirst
+
+Kubelet insecure TLS if self-signed certs are used:
+
+args:
+  - --kubelet-insecure-tls
+
+Node Selector to control placement (optional):
+
+nodeSelector:
+  kubernetes.io/hostname: worker1
+
+Custom Port (default 443), match host firewall:
+
+args:
+  - --secure-port=4443
+ports:
+  - containerPort: 4443
+
+Probes:
+
+livenessProbe:
+  httpGet:
+    path: /livez
+    port: https
+    scheme: HTTPS
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: https
+    scheme: HTTPS
+5. Verifying Installation
+
+Check Metrics Server pods:
+
+kubectl get pods -n kube-system -l k8s-app=metrics-server -o wide
+
+Check APIService:
+
+kubectl get apiservice v1beta1.metrics.k8s.io -o wide
+
+AVAILABLE=True → Metrics Server is functioning
+
+AVAILABLE=False → Something is wrong (TLS, network, pods pending)
+
+Check metrics:
+
+kubectl top nodes
+kubectl top pods -A
+6. Common Issues & Troubleshooting
+Issue	Symptoms	Fix
+Pod in Pending	No node selected	Check nodeSelector or available resources
+Pod in ContainerCreating	Volume mount/network issue	Ensure hostNetwork=true, proper volumes defined
+Pod in Error	Kubelet TLS or port issues	Use --kubelet-insecure-tls and match secure-port
+APIService False	Metrics API not reachable	Ensure Metrics Server pod is Running and network allows access
+Port conflicts	Metrics Server can't start	Change --secure-port to an unused port (e.g., 4443)
+7. Step-by-Step Recovery Example
+
+Delete failing pods:
+
+kubectl delete pod -n kube-system -l k8s-app=metrics-server
+
+Re-apply the manifest:
+
+kubectl apply -f metrics-server-fix.yaml
+
+Restart deployment:
+
+kubectl rollout restart deployment metrics-server -n kube-system
+
+Watch pod status:
+
+kubectl get pods -n kube-system -l k8s-app=metrics-server -o wide --watch
+
+Check APIService:
+
+kubectl get apiservice v1beta1.metrics.k8s.io -o wide
+
+Verify metrics:
+
+kubectl top nodes
+kubectl top pods -A
+8. Notes & Best Practices
+
+Always ensure metrics-server version matches your Kubernetes version
+
+If using network policies, allow pod-to-pod traffic for port 443/4443
+
+For multi-node clusters, hostNetwork: true often fixes connectivity issues
+
+Keep a backup of your manifest for easy restoration
