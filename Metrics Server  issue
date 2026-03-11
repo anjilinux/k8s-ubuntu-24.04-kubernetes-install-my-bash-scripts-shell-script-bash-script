@@ -133,3 +133,147 @@ If using network policies, allow pod-to-pod traffic for port 443/4443
 For multi-node clusters, hostNetwork: true often fixes connectivity issues
 
 Keep a backup of your manifest for easy restoration
+
+root@master1:~# 
+root@master1:~# kubectl top nodes
+kubectl top pods -A
+NAME      CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)   
+master1   3128m        11%      29703Mi         62%         
+master2   79m          3%       2123Mi          51%         
+master3   77m          3%       2305Mi          55%         
+worker1   39m          1%       1487Mi          73%         
+worker2   115m         5%       1348Mi          66%         
+NAMESPACE                       NAME                                                         CPU(cores)   MEMORY(bytes)   
+calico-system                   calico-apiserver-6f7858f558-qwfcs                            6m           53Mi            
+calico-system                   calico-apiserver-6f7858f558-wrwpp                            2m           37Mi            
+calico-system                   calico-kube-controllers-686bcd99b6-ts5pk                     1m           23Mi            
+calico-system                   calico-node-2fv9f                                            23m          197Mi           
+calico-system                   calico-node-g94ms                                            12m          236Mi           
+calico-system                   calico-node-h5qqr                                            15m          226Mi           
+calico-system                   calico-node-mndjc                                            14m          186Mi           
+calico-system                   calico-node-vpm5w                                            31m          211Mi           
+calico-system                   calico-typha-cb99d4cc9-6h7hg                                 6m           28Mi            
+calico-system                   calico-typha-cb99d4cc9-sgb5f                                 1m           37Mi            
+calico-system                   calico-typha-cb99d4cc9-smnj6                                 1m           23Mi            
+calico-system                   csi-node-driver-5x44x                                        1m           7Mi             
+calico-system                   csi-node-driver-8swcb                                        1m           7Mi             
+calico-system                   csi-node-driver-p5866                                        1m           10Mi            
+calico-system                   csi-node-driver-qrl82                                        1m           7Mi             
+calico-system                   csi-node-driver-wrcnq                                        1m           12Mi            
+calico-system                   goldmane-56f8bf7d87-tmxh2                                    2m           47Mi            
+calico-system                   whisker-749bd798d8-jqns7                                     0m           28Mi            
+cert-manager                    cert-manager-86f5967f88-9lhlm                                1m           27Mi            
+cert-manager                    cert-manager-cainjector-74fc95566f-84nnw                     1m           48Mi            
+cert-manager                    cert-manager-webhook-76589d6cc6-wfb75                        1m           15Mi            
+default                         test-nginx                                                   0m           23Mi            
+ingress-nginx                   ingress-nginx-controller-5b94446ddb-96rnx                    2m           355Mi           
+kube-system                     coredns-668d6bf9bc-dvspg                                     2m           26Mi            
+kube-system                     coredns-668d6bf9bc-j9ct5                                     4m           24Mi            
+kube-system                     etcd-master1                                                 23m          194Mi           
+kube-system                     etcd-master2                                                 24m          100Mi           
+kube-system                     etcd-master3                                                 24m          98Mi            
+kube-system                     kube-apiserver-master1                                       35m          815Mi           
+kube-system                     kube-apiserver-master2                                       22m          521Mi           
+kube-system                     kube-apiserver-master3                                       24m          747Mi           
+kube-system                     kube-controller-manager-master1                              1m           28Mi            
+kube-system                     kube-controller-manager-master2                              1m           51Mi            
+kube-system                     kube-controller-manager-master3                              7m           121Mi           
+kube-system                     kube-proxy-6c2nn                                             1m           21Mi            
+kube-system                     kube-proxy-8c7xl                                             2m           23Mi            
+kube-system                     kube-proxy-hrddw                                             1m           55Mi            
+kube-system                     kube-proxy-mctdv                                             1m           23Mi            
+kube-system                     kube-proxy-xpfwz                                             1m           21Mi            
+kube-system                     kube-scheduler-master1                                       4m           41Mi            
+kube-system                     kube-scheduler-master2                                       4m           75Mi            
+kube-system                     kube-scheduler-master3                                       3m           43Mi            
+kube-system                     kube-state-metrics-5c7d674fdd-c7nn2                          1m           31Mi            
+kube-system                     kube-state-metrics-5c7d674fdd-f62rz                          2m           34Mi            
+kube-system                     kube-state-metrics-5c7d674fdd-hpncn                          4m           22Mi            
+kube-system                     kube-state-metrics-5c7d674fdd-n48d6                          1m           25Mi            
+kube-system                     kube-state-metrics-5c7d674fdd-vb587                          1m           26Mi            
+kube-system                     metrics-server-86684d6947-d8427                              8m           19Mi            
+kubernetes-dashboard            dashboard-metrics-scraper-5bd45c9dd6-75wdl                   1m           9Mi             
+kubernetes-dashboard            kubernetes-dashboard-79cbcf9fb6-j785x                        1m           10Mi            
+local-path-storage              local-path-provisioner-689dd6b546-gd7cr                      1m           18Mi            
+logging                         loki-0                                                       5m           257Mi           
+logging                         loki-canary-kgkd5                                            2m           10Mi            
+logging                         loki-canary-s7z6k                                            1m           32Mi            
+logging                         loki-canary-vwmvw                                            1m           15Mi            
+logging                         loki-chunks-cache-0                                          2m           45Mi            
+logging                         loki-gateway-84c695b6f8-4sck8                                1m           12Mi            
+logging                         loki-results-cache-0                                         1m           17Mi            
+logging                         promtail-5vbhx                                               5m           30Mi            
+logging                         promtail-5whv7                                               6m           36Mi            
+logging                         promtail-qznk8                                               19m          74Mi            
+logging                         promtail-t54nf                                               5m           33Mi            
+logging                         promtail-vsd82                                               6m           42Mi            
+loki                            loki-0                                                       3m           83Mi            
+loki                            loki-grafana-549844485f-btlz8                                1m           114Mi           
+loki                            loki-promtail-gdx29                                          7m           44Mi            
+loki                            loki-promtail-km97c                                          17m          70Mi            
+loki                            loki-promtail-mbpgv                                          5m           40Mi            
+loki                            loki-promtail-sg7xl                                          5m           97Mi            
+loki                            loki-promtail-xzns7                                          7m           42Mi            
+metallb-system                  controller-9c6cff498-h7vgf                                   1m           53Mi            
+metallb-system                  speaker-2kjl8                                                3m           26Mi            
+metallb-system                  speaker-7r72n                                                3m           40Mi            
+metallb-system                  speaker-bdbsf                                                8m           22Mi            
+metallb-system                  speaker-gmhr7                                                3m           25Mi            
+metallb-system                  speaker-hphql                                                2m           53Mi            
+monitoring                      alertmanager-kube-prometheus-stack-alertmanager-0            1m           38Mi            
+monitoring                      alertmanager-monitoring-kube-prometheus-alertmanager-0       1m           36Mi            
+monitoring                      kube-prometheus-stack-grafana-7db76cff66-rmj6t               3m           346Mi           
+monitoring                      kube-prometheus-stack-kube-state-metrics-786c9f6658-9d6qx    2m           60Mi            
+monitoring                      kube-prometheus-stack-operator-75569f4b88-wz54r              2m           28Mi            
+monitoring                      kube-prometheus-stack-prometheus-node-exporter-8vkvk         3m           15Mi            
+monitoring                      kube-prometheus-stack-prometheus-node-exporter-c45x2         1m           8Mi             
+monitoring                      kube-prometheus-stack-prometheus-node-exporter-kw2g6         1m           5Mi             
+monitoring                      kube-prometheus-stack-prometheus-node-exporter-nppld         1m           7Mi             
+monitoring                      kube-prometheus-stack-prometheus-node-exporter-wzg2k         1m           3Mi             
+monitoring                      monitoring-grafana-78c4fb4c77-j4rvr                          5m           330Mi           
+monitoring                      monitoring-kube-prometheus-operator-6d7b7949fd-l9k6p         2m           26Mi            
+monitoring                      monitoring-kube-state-metrics-597898bc4-sg7bz                2m           26Mi            
+monitoring                      prometheus-kube-prometheus-stack-prometheus-0                21m          713Mi           
+monitoring                      prometheus-monitoring-kube-prometheus-prometheus-0           23m          633Mi           
+observability                   jaeger-operator-778699d44d-zxwfw                             3m           32Mi            
+observability                   otel-collector-5985849cd9-fh24g                              1m           27Mi            
+observability                   otel-demo-5b4866b6d9-qbdkx                                   2m           26Mi            
+observability                   simplest-7ccccdfb5b-ww68k                                    1m           20Mi            
+opentelemetry-operator-system   opentelemetry-operator-controller-manager-64b66dc554-r9mrq   1m           29Mi            
+otel-demo                       accounting-54746ffc84-psms6                                  2m           92Mi            
+otel-demo                       ad-7f9f64479-hcj8x                                           1m           219Mi           
+otel-demo                       cart-78874668d-2w5l9                                         1m           61Mi            
+otel-demo                       checkout-6b59f9ccb4-rw94v                                    1m           13Mi            
+otel-demo                       currency-67f769c69-j9bjq                                     1m           10Mi            
+otel-demo                       email-df76cdc65-b2g6s                                        1m           49Mi            
+otel-demo                       flagd-55cb9c658-fdlnd                                        5m           226Mi           
+otel-demo                       fraud-detection-5976fc5c7b-lllvl                             2m           241Mi           
+otel-demo                       frontend-66cbd69c8c-j59rc                                    2m           89Mi            
+otel-demo                       frontend-proxy-694b8c4bbb-5k9h2                              7m           26Mi            
+otel-demo                       grafana-59d5f857bd-t6mvm                                     4m           409Mi           
+otel-demo                       image-provider-76fd778f49-ksq4x                              1m           9Mi             
+otel-demo                       jaeger-76b4cc75dd-z72j5                                      1m           61Mi            
+otel-demo                       kafka-b5cbc89f7-hpw96                                        5m           547Mi           
+otel-demo                       load-generator-f7bf6dbb8-gr9rg                               574m         1188Mi          
+otel-demo                       opensearch-0                                                 8m           895Mi           
+otel-demo                       otel-collector-54555596d5-54ktq                              11m          176Mi           
+otel-demo                       payment-5f789649fc-gm5bj                                     4m           100Mi           
+otel-demo                       postgresql-77b458599c-n8r7z                                  1m           54Mi            
+otel-demo                       product-catalog-768d9464ff-l5nft                             1m           16Mi            
+otel-demo                       prometheus-fdcdcbf8f-hr5vv                                   662m         276Mi           
+otel-demo                       quote-7b87d99574-swx6n                                       1m           14Mi            
+otel-demo                       recommendation-6f9c4c9487-gj58l                              6m           52Mi            
+otel-demo                       shipping-7966cd784c-p6h9r                                    2m           4Mi             
+otel-demo                       valkey-cart-7cc4575d68-jdv4z                                 2m           3Mi             
+tigera-operator                 tigera-operator-7d4578d8d-hsmkl                              2m           149Mi           
+tracing                         simplest-675589d7b-4blbd                                     1m           18Mi            
+root@master1:~# 
+root@master1:~# 
+root@master1:~# kubectl top nodes
+NAME      CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)   
+master1   4308m        15%      29602Mi         61%         
+master2   96m          4%       2120Mi          51%         
+master3   94m          4%       2201Mi          53%         
+worker1   51m          2%       1461Mi          71%         
+worker2   117m         5%       1514Mi          74%         
+root@master1:~# 
