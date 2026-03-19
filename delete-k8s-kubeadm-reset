@@ -10,7 +10,7 @@ sudo rm -rf /var/lib/kubelet/*
 sudo systemctl restart kubelet
 sudo swapoff -a
 sudo sed -i '/ swap / s/^/#/' /etc/fstab
-
+sudo systemctl stop firewalld 
 
 # Remove all packages related to Kubernetes
 apt remove -y kubeadm kubectl kubelet kubernetes-cni 
