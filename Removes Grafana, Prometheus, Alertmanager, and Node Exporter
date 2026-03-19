@@ -1,0 +1,55 @@
+#!/bin/bash
+# FULL MONITORING STACK REMOVAL SCRIPT
+# Removes Grafana, Prometheus, Alertmanager, and Node Exporter
+
+set -e
+
+# --- Helper function ---
+remove_service() {
+    local name=$1
+    local apt_pkg=$2
+    local dirs=("${!3}")
+    echo
+    echo "=== Removing $name ==="
+    echo "Stopping service..."
+    sudo systemctl stop $name 2>/dev/null || true
+    echo "Disabling service..."
+    sudo systemctl disable $name 2>/dev/null || true
+    echo "Removing package..."
+    sudo apt-get remove --purge -y $apt_pkg 2>/dev/null || true
+    echo "Removing directories..."
+    for dir in "${dirs[@]}"; do
+        sudo rm -rf "$dir"
+    done
+    echo "Removing user and group..."
+    sudo deluser $name 2>/dev/null || true
+    sudo delgroup $name 2>/dev/null || true
+    echo "Removing systemd service file..."
+    sudo rm -f /etc/systemd/system/$name.service 2>/dev/null || true
+    echo "$name removal complete."
+}
+
+# --- Remove Grafana ---
+grafana_dirs=(/etc/grafana /var/lib/grafana /var/log/grafana /usr/share/grafana)
+remove_service "grafana" "grafana" grafana_dirs[@]
+
+# --- Remove Prometheus ---
+prometheus_dirs=(/etc/prometheus /var/lib/prometheus /var/log/prometheus /usr/share/prometheus)
+remove_service "prometheus" "prometheus" prometheus_dirs[@]
+
+# --- Remove Alertmanager ---
+alertmanager_dirs=(/etc/alertmanager /var/lib/alertmanager /var/log/alertmanager /usr/share/alertmanager)
+remove_service "alertmanager" "alertmanager" alertmanager_dirs[@]
+
+# --- Remove Node Exporter ---
+node_exporter_dirs=(/etc/node_exporter /var/lib/node_exporter /var/log/node_exporter /usr/local/bin/node_exporter /usr/share/node_exporter)
+remove_service "node_exporter" "prometheus-node-exporter" node_exporter_dirs[@]
+
+# --- Final cleanup ---
+echo
+echo "Reloading systemd daemon..."
+sudo systemctl daemon-reload
+
+echo
+echo "All monitoring stack components have been fully removed."
+echo "Optional: run 'sudo apt autoremove -y' to clean orphaned packages."
