@@ -609,5 +609,16 @@ monitoring             monitoring-prometheus-node-exporter                  Clus
 monitoring             otel-collector-opentelemetry-collector               ClusterIP      10.111.100.178   <none>            6831/UDP,14250/TCP,14268/TCP,4317/TCP,4318/TCP,9411/TCP   23m   app.kubernetes.io/instance=otel-collector,app.kubernetes.io/name=opentelemetry-collector,component=standalone-collector
 monitoring             prometheus-operated                                  ClusterIP      None             <none>            9090/TCP                                                  96m   app.kubernetes.io/name=prometheus
 vga@usb:~$ 
+======================
+vga@usb:~$ kubectl get pvc,pv -A  -o wide  
+NAMESPACE    NAME                                   STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE   VOLUMEMODE
+monitoring   persistentvolumeclaim/jaeger-pvc       Bound    pvc-8d70d886-7841-45a4-ba2b-f2bf12384564   5Gi        RWO            local-path     <unset>                 42m   Filesystem
+monitoring   persistentvolumeclaim/otel-pvc         Bound    otel-pv                                    5Gi        RWO            local-path     <unset>                 33m   Filesystem
+monitoring   persistentvolumeclaim/storage-loki-0   Bound    pvc-818ac6c0-d707-4b85-8336-0c90ecec6536   10Gi       RWO            local-path     <unset>                 58m   Filesystem
 
+NAMESPACE   NAME                                                        CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                       STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE   VOLUMEMODE
+            persistentvolume/otel-pv                                    5Gi        RWO            Retain           Bound    monitoring/otel-pvc         local-path     <unset>                          33m   Filesystem
+            persistentvolume/pvc-818ac6c0-d707-4b85-8336-0c90ecec6536   10Gi       RWO            Delete           Bound    monitoring/storage-loki-0   local-path     <unset>                          58m   Filesystem
+            persistentvolume/pvc-8d70d886-7841-45a4-ba2b-f2bf12384564   5Gi        RWO            Delete           Bound    monitoring/jaeger-pvc       local-path     <unset>                          40m   Filesystem
+vga@usb:~$ 
 
