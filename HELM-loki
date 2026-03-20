@@ -1,3 +1,9 @@
+===========================
+helm uninstall loki -n monitoring
+kubectl delete pvc -n monitoring --all
+
+helm install loki grafana/loki -n monitoring -f loki-values.yaml
+==================
 deploymentMode: SingleBinary
 
 singleBinary:
