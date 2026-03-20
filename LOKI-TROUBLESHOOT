@@ -1,0 +1,194 @@
+Kubernetes Monitoring Stack (Prometheus + Grafana + Loki) – Setup & Troubleshooting Guide
+🔧 1. Install kube-prometheus-stack
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+helm install monitoring prometheus-community/kube-prometheus-stack -n monitoring --create-namespace
+🔍 2. Verify Installation
+kubectl get pods -n monitoring
+
+✅ Expected:
+
+Prometheus → Running
+
+Grafana → Running
+
+Alertmanager → Running
+
+🌐 3. Access Grafana
+Get password
+kubectl get secret -n monitoring monitoring-grafana \
+-o jsonpath="{.data.admin-password}" | base64 -d
+Port forward
+kubectl port-forward svc/monitoring-grafana 3000:80 -n monitoring
+
+👉 Open: http://localhost:3000
+👉 Username: admin
+
+🌍 4. Expose Grafana via NodePort (Optional)
+grafana:
+  service:
+    type: NodePort
+    nodePort: 30000
+
+Apply via Helm upgrade.
+
+⚠️ COMMON ISSUE: Grafana CrashLoopBackOff
+Error:
+Only one datasource per organization can be marked as default
+Fix:
+
+Edit datasource config
+
+Ensure ONLY ONE:
+
+isDefault: true
+📦 5. Install Loki (Correct Way)
+Create values file: loki-values.yaml
+deploymentMode: SingleBinary
+
+singleBinary:
+  replicas: 1
+
+backend:
+  replicas: 0
+
+read:
+  replicas: 0
+
+write:
+  replicas: 0
+
+gateway:
+  enabled: false
+
+chunksCache:
+  enabled: false
+
+resultsCache:
+  enabled: false
+
+loki:
+  auth_enabled: false
+  commonConfig:
+    replication_factor: 1
+
+  storage:
+    type: filesystem
+
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: index_
+          period: 24h
+
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClassName: local-path
+Install Loki
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+
+helm install loki grafana/loki -n monitoring -f loki-values.yaml
+🔍 6. Verify Loki
+kubectl get pods -n monitoring | grep loki
+
+✅ Expected:
+
+loki-0   1/1 Running
+⚠️ COMMON ISSUE: Loki Pod Pending
+Check PVC:
+kubectl get pvc -n monitoring
+If Pending ❌
+
+Fix StorageClass:
+
+kubectl get storageclass
+kubectl patch storageclass local-path \
+-p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+
+Then reinstall Loki.
+
+⚠️ COMMON ISSUE: Loki CrashLoopBackOff
+Error:
+
+schema v11 / v13 mismatch
+
+structured metadata error
+
+Fix:
+
+Use:
+
+store: tsdb
+schema: v13
+🔗 7. Connect Loki to Grafana
+
+Go to:
+
+👉 Grafana → Data Sources → Add Loki
+
+Use:
+http://loki.monitoring.svc.cluster.local:3100
+
+❌ Do NOT use:
+
+http://localhost:3100
+✅ Test Connection
+
+Click:
+👉 Save & Test
+
+Expected:
+
+Data source successfully connected
+📜 8. View Logs
+
+Go to:
+
+👉 Explore → Select Loki
+
+Run:
+
+{}
+⚠️ If NO logs appear
+
+👉 Loki is working but no log collector installed.
+
+🚀 9. Install Promtail (Log Collector)
+helm install promtail grafana/promtail -n monitoring \
+  --set "loki.serviceName=loki"
+🔍 10. Verify Logs
+{job="varlogs"}
+
+✅ You should now see:
+
+Pod logs
+
+Container logs
+
+🧠 Troubleshooting Summary
+Problem	Cause	Fix
+Grafana CrashLoop	Multiple default datasources	Keep only one default
+Loki Pending	PVC not bound	Fix StorageClass
+Loki CrashLoop	Wrong schema	Use tsdb + v13
+No logs	Promtail missing	Install Promtail
+Loki not reachable	Wrong URL	Use cluster DNS
+🎯 Final Architecture
+
+Prometheus → Metrics
+
+Grafana → Dashboards
+
+Loki → Logs
+
+Promtail → Log collection
+
+✅ DONE
+
+You now have a production-ready monitoring + logging system.
