@@ -71,33 +71,3 @@ grafana:
           type: loki
           access: proxy
           url: http://loki:3100
-
-
-##################  otel-values.yaml  ##################################
-mode: deployment
-
-extraVolumes:
-  - name: otel-storage
-    persistentVolumeClaim:
-      claimName: otel-pvc
-
-extraVolumeMounts:
-  - name: otel-storage
-    mountPath: /data
-
-config:
-  receivers:
-    otlp:
-      protocols:
-        grpc:
-        http:
-
-  exporters:
-    file:
-      path: /data/output.json
-
-  service:
-    pipelines:
-      traces:
-        receivers: [otlp]
-        exporters: [file]
