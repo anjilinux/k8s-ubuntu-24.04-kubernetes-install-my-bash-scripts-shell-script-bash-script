@@ -1,0 +1,182 @@
+📘 Kubernetes Bare-Metal Setup Guide
+(Ingress-NGINX + MetalLB LoadBalancer)
+1️⃣ Prerequisites
+
+Kubernetes cluster (single or multi-node)     
+
+kubectl configured
+
+Nodes in private network (example: 192.168.122.0/24)
+
+Internet access for pulling images
+
+2️⃣ Install Ingress Controller (NGINX)
+
+Install Ingress controller in bare-metal mode.
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/baremetal/deploy.yaml
+Check services
+kubectl get svc -n ingress-nginx
+
+You will see:
+
+ingress-nginx-controller   NodePort
+
+Example:
+
+80:32143/TCP, 443:32325/TCP
+3️⃣ Test Ingress using NodePort (initial access)
+
+If no LoadBalancer exists yet:
+
+http://<node-ip>:<node-port>
+
+Example:
+
+http://192.168.122.131:32143
+4️⃣ Install MetalLB (Bare-Metal LoadBalancer)
+
+MetalLB provides LoadBalancer IPs for on-prem clusters.
+
+Install MetalLB
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/main/config/manifests/metallb-native.yaml
+Verify pods
+kubectl get pods -n metallb-system
+
+Expected:
+
+controller Running
+speaker Running
+5️⃣ Configure MetalLB IP Pool
+
+Create config file:
+
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: default-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.122.200-192.168.122.220
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: default-advertisement
+  namespace: metallb-system
+
+Apply:
+
+kubectl apply -f metallb-config.yaml
+6️⃣ Patch Ingress Service to LoadBalancer
+kubectl patch svc ingress-nginx-controller -n ingress-nginx \
+  -p '{"spec": {"type": "LoadBalancer"}}'
+Verify External IP
+kubectl get svc -n ingress-nginx
+
+Expected:
+
+EXTERNAL-IP: 192.168.122.200
+7️⃣ Create Ingress Rule
+
+Example ingress:
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+spec:
+  rules:
+  - host: nginx.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nginx
+            port:
+              number: 80
+
+Apply:
+
+kubectl apply -f nginx-ingress.yaml
+8️⃣ DNS Setup (Local Testing)
+
+Add entry in your local machine:
+
+sudo nano /etc/hosts
+
+Add:
+
+192.168.122.200 nginx.local
+9️⃣ Final Access Test
+
+Try in browser:
+
+http://nginx.local
+
+OR:
+
+http://nginx.local:80
+⚠️ IMPORTANT ISSUE (Your Case)
+
+You used network:
+
+192.168.122.x (KVM NAT network)
+
+👉 This is NOT reachable from your laptop network:
+
+192.168.31.x ❌
+
+So:
+
+MetalLB IP works inside cluster
+
+But NOT accessible from browser
+
+🔧 FIX OPTIONS
+Option 1 (Simple)
+
+Use NodePort:
+
+http://192.168.122.131:30000
+Option 2 (Proper Production Fix)
+
+Change MetalLB range to your LAN:
+
+192.168.31.240-192.168.31.250
+
+And use bridged network
+
+Option 3 (Temporary)
+kubectl port-forward svc/ingress-nginx-controller -n ingress-nginx 8080:80
+
+Access:
+
+http://localhost:8080
+🧠 Architecture Summary
+Browser
+   ↓
+Ingress (NGINX)
+   ↓
+Service (ClusterIP)
+   ↓
+Pod (App)
+
+MetalLB provides:
+   LoadBalancer IP → external access
+📌 Key Components Used
+
+Kubernetes
+
+ingress-nginx
+
+MetalLB
+
+🎯 Final Conclusion
+
+✔ Ingress works
+✔ MetalLB installed correctly
+❌ External network mismatch is the only issue
