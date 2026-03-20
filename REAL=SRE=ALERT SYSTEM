@@ -10,5 +10,118 @@ Node pressure alerts
 
 SLA dashboards
 
+===================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: production-alerts
+  namespace: monitoring
+spec:
+  groups:
+
+  # =========================
+  # CPU ALERTS
+  # =========================
+  - name: cpu-alerts
+    rules:
+    - alert: HighCPUUsage
+      expr: sum(rate(container_cpu_usage_seconds_total[5m])) by (namespace) > 1
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High CPU usage in {{ $labels.namespace }}"
+        description: "CPU usage is above 1 core for 5 minutes"
+
+  # =========================
+  # MEMORY ALERTS
+  # =========================
+  - name: memory-alerts
+    rules:
+    - alert: HighMemoryUsage
+      expr: sum(container_memory_working_set_bytes) by (namespace) > 2e9
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "High memory usage"
+        description: "Memory usage > 2GB"
+
+    - alert: PossibleMemoryLeak
+      expr: increase(container_memory_working_set_bytes[1h]) > 300 * 1024 * 1024
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Possible memory leak"
+        description: "Memory increased >300MB in 1 hour"
+
+  # =========================
+  # DISK ALERTS
+  # =========================
+  - name: disk-alerts
+    rules:
+    - alert: DiskSpaceLow
+      expr: (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes) * 100 < 20
+      for: 5m
+      labels:
+        severity: critical
+
+  # =========================
+  # POD ALERTS
+  # =========================
+  - name: pod-alerts
+    rules:
+    - alert: PodCrashLooping
+      expr: increase(kube_pod_container_status_restarts_total[10m]) > 2
+      for: 3m
+      labels:
+        severity: critical
+
+    - alert: CrashLoopingPods
+      expr: kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"} == 1
+      for: 5m
+      labels:
+        severity: critical
+
+  # =========================
+  # NODE ALERTS
+  # =========================
+  - name: node-alerts
+    rules:
+    - alert: NodeMemoryPressure
+      expr: kube_node_status_condition{condition="MemoryPressure", status="true"} == 1
+      for: 2m
+      labels:
+        severity: critical
+
+    - alert: NodeDiskPressure
+      expr: kube_node_status_condition{condition="DiskPressure", status="true"} == 1
+      for: 2m
+      labels:
+        severity: critical
+
+    - alert: NodeNotReady
+      expr: kube_node_status_condition{condition="Ready", status="true"} == 0
+      for: 3m
+      labels:
+        severity: critical
+
+  # =========================
+  # NETWORK ALERTS
+  # =========================
+  - name: network-alerts
+    rules:
+    - alert: HighNetworkReceive
+      expr: rate(node_network_receive_bytes_total[5m]) > 50000000
+      for: 5m
+      labels:
+        severity: warning
+
+    - alert: HighNetworkTransmit
+      expr: rate(node_network_transmit_bytes_total[5m]) > 50000000
+      for: 5m
+      labels:
+        severity: warning
 
 =================================
