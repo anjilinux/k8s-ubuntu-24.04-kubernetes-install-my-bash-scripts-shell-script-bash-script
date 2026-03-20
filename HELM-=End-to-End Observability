@@ -1,0 +1,513 @@
+# 🚀 End-to-End Observability Stack (Production-Style Documentation)
+
+## 📌 Overview
+
+This document describes how to set up a complete observability stack in Kubernetes:
+
+* **Metrics** → Prometheus
+* **Logs** → Loki + Promtail
+* **Tracing** → OpenTelemetry + Jaeger
+* **Visualization** → Grafana
+
+---
+
+# 🧱 ARCHITECTURE
+
+```
+Applications
+   │
+   ├── Metrics → Prometheus → Grafana
+   ├── Logs → Promtail → Loki → Grafana
+   └── Traces → OTEL Collector → Jaeger → Grafana (optional)
+```
+
+---
+
+# ⚙️ 1. PREREQUISITES
+
+* Kubernetes cluster (1 master + workers)
+* Helm installed
+* StorageClass available (`local-path`)
+
+Check:
+
+```bash
+kubectl get storageclass
+```
+
+---
+
+# 📊 2. INSTALL PROMETHEUS + GRAFANA
+
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+```
+
+```bash
+helm install monitoring prometheus-community/kube-prometheus-stack -n monitoring --create-namespace
+```
+
+---
+
+## 🔓 Expose Grafana
+
+```bash
+kubectl edit svc monitoring-grafana -n monitoring
+```
+
+Set:
+
+```yaml
+type: NodePort
+nodePort: 30000
+```
+
+Access:
+
+```
+http://<NODE-IP>:30000
+```
+
+---
+
+# 📦 3. INSTALL LOKI (WITH PVC)
+
+## ✅ loki-values.yaml
+
+```yaml
+deploymentMode: SingleBinary
+
+singleBinary:
+  replicas: 1
+
+backend:
+  replicas: 0
+
+read:
+  replicas: 0
+
+write:
+  replicas: 0
+
+gateway:
+  enabled: false
+
+chunksCache:
+  enabled: false
+
+resultsCache:
+  enabled: false
+
+loki:
+  auth_enabled: false
+  commonConfig:
+    replication_factor: 1
+  storage:
+    type: filesystem
+
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: index_
+          period: 24h
+
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClassName: local-path
+```
+
+---
+
+## Install Loki
+
+```bash
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+
+helm install loki grafana/loki -n monitoring -f loki-values.yaml
+```
+
+---
+
+## ✅ Verify
+
+```bash
+kubectl get pods -n monitoring | grep loki
+```
+
+Expected:
+
+```
+loki-0   1/1 Running
+```
+
+---
+
+# 📜 4. INSTALL PROMTAIL (LOG COLLECTION)
+
+```bash
+helm install promtail grafana/promtail -n monitoring \
+  --set config.clients[0].url=http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
+```
+
+---
+
+## ✅ Verify
+
+```bash
+kubectl get pods -n monitoring | grep promtail
+```
+
+---
+
+## 🔍 Test Logs
+
+Grafana → Explore → Loki
+
+Query:
+
+```
+{namespace="monitoring"}
+```
+
+---
+
+# 🔗 5. CONNECT GRAFANA → LOKI
+
+Go to:
+
+```
+Grafana → Connections → Data Sources → Loki
+```
+
+URL:
+
+```
+http://loki.monitoring.svc.cluster.local:3100
+```
+
+Click:
+
+```
+Save & Test ✅
+```
+
+---
+
+# 🔍 6. INSTALL JAEGER
+
+## Example Deployment + Service (NodePort)
+
+Expose:
+
+```
+Port: 16686
+NodePort: 30006
+```
+
+Access:
+
+```
+http://<NODE-IP>:30006
+```
+
+---
+
+# 🔄 7. INSTALL OPENTELEMETRY COLLECTOR
+
+## otel-values.yaml
+
+```yaml
+mode: deployment
+
+image:
+  repository: otel/opentelemetry-collector
+
+config:
+  receivers:
+    otlp:
+      protocols:
+        grpc: {}
+        http: {}
+
+  exporters:
+    otlp/jaeger:
+      endpoint: jaeger.monitoring.svc.cluster.local:4317
+      tls:
+        insecure: true
+
+  service:
+    pipelines:
+      traces:
+        receivers: [otlp]
+        exporters: [otlp/jaeger]
+```
+
+---
+
+## Install
+
+```bash
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+helm repo update
+
+helm install otel-collector open-telemetry/opentelemetry-collector \
+  -n monitoring -f otel-values.yaml
+```
+
+---
+
+## ✅ Verify
+
+```bash
+kubectl get pods -n monitoring | grep otel
+```
+
+---
+
+# 🧪 8. TEST TRACING
+
+## Create test pod
+
+```bash
+kubectl run otel-test --image=curlimages/curl -n default -- sleep 3600
+```
+
+---
+
+## Exec
+
+```bash
+kubectl exec -it otel-test -n default -- sh
+```
+
+---
+
+## Send trace
+
+```bash
+curl -X POST http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4318/v1/traces \
+-H "Content-Type: application/json" \
+-d '{
+  "resourceSpans": [{
+    "resource": {
+      "attributes": [{
+        "key": "service.name",
+        "value": { "stringValue": "demo-app" }
+      }]
+    },
+    "scopeSpans": [{
+      "spans": [{
+        "traceId": "12345678901234567890123456789012",
+        "spanId": "1234567890123456",
+        "name": "test-span",
+        "kind": 1,
+        "startTimeUnixNano": "1670000000000000000",
+        "endTimeUnixNano": "1670000001000000000"
+      }]
+    }]
+  }]
+}'
+```
+
+---
+
+## Verify in UI
+
+Open:
+
+```
+http://<NODE-IP>:30006
+```
+
+Select:
+
+```
+demo-app
+```
+
+---
+
+# 🧰 TROUBLESHOOTING GUIDE
+
+---
+
+## ❌ Loki CrashLoopBackOff
+
+### Cause:
+
+* Wrong schema (v11)
+* Missing tsdb
+
+### Fix:
+
+```
+schema: v13
+store: tsdb
+object_store: filesystem
+```
+
+---
+
+## ❌ Error: bucketNames.chunks
+
+### Cause:
+
+* Using distributed mode
+
+### Fix:
+
+```
+deploymentMode: SingleBinary
+```
+
+---
+
+## ❌ OTEL CrashLoopBackOff
+
+### Error:
+
+```
+must specify at least one protocol
+```
+
+### Fix:
+
+```yaml
+receivers:
+  otlp:
+    protocols:
+      grpc: {}
+      http: {}
+```
+
+---
+
+## ❌ OTEL invalid config (pipelines/exporters)
+
+### Cause:
+
+Wrong YAML structure
+
+### Fix:
+
+Ensure inside `config:` block
+
+---
+
+## ❌ 405 method not allowed
+
+### Cause:
+
+GET instead of POST
+
+### Fix:
+
+```
+curl -X POST
+```
+
+---
+
+## ❌ No logs in Grafana
+
+### Check:
+
+```bash
+kubectl get pods -n monitoring | grep promtail
+```
+
+### Fix:
+
+* Ensure Promtail running
+* Correct Loki URL
+
+---
+
+## ❌ PVC Pending
+
+### Check:
+
+```bash
+kubectl get pv
+```
+
+### Fix:
+
+* Create matching PV
+* Ensure storageClass correct
+
+---
+
+## ❌ Jaeger not opening
+
+### Fix:
+
+```bash
+kubectl get svc jaeger -n monitoring
+```
+
+Ensure:
+
+```
+NodePort: 30006
+```
+
+---
+
+## ❌ Prometheus not accessible
+
+Expose:
+
+```bash
+kubectl edit svc monitoring-kube-prometheus-prometheus -n monitoring
+```
+
+---
+
+# 🏁 FINAL VALIDATION CHECKLIST
+
+| Component  | Status |
+| ---------- | ------ |
+| Prometheus | ✅      |
+| Grafana    | ✅      |
+| Loki       | ✅      |
+| Promtail   | ✅      |
+| Jaeger     | ✅      |
+| OTEL       | ✅      |
+| PVC        | ✅      |
+| Logs       | ✅      |
+| Traces     | ✅      |
+
+---
+
+# 🚀 PRODUCTION IMPROVEMENTS (NEXT LEVEL)
+
+* Add **Ingress (NGINX)**
+* Enable **TLS**
+* Add **alerts (Prometheus AlertManager)**
+* Use **S3 instead of filesystem for Loki**
+* Scale OTEL collectors
+* Add authentication to Grafana
+
+---
+
+# 🎯 CONCLUSION
+
+You now have a **complete production-grade observability stack**:
+
+✔ Metrics
+✔ Logs
+✔ Traces
+✔ Persistent storage
+✔ UI dashboards
+
+---
+
+🔥 This setup matches real-world DevOps environments.
