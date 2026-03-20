@@ -1,0 +1,74 @@
+# helm upgrade monitoring prometheus-community/kube-prometheus-stack \
+#   -n monitoring \
+#   -f values.yaml
+
+
+alertmanager:
+  config:
+    global:
+      smtp_smarthost: smtp.gmail.com:587
+      smtp_from: anjireddy2024@gmail.com
+      smtp_auth_username: anjireddy2024@gmail.com
+      smtp_auth_password: "efioiflorhwaorjy"
+      smtp_require_tls: true
+
+    route:
+      receiver: gmail
+
+    receivers:
+      - name: gmail
+        email_configs:
+          - to: anjireddy2024@gmail.com
+            send_resolved: true
+
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+
+  service:
+    type: NodePort
+    nodePort: 30003
+
+
+prometheus:
+  service:
+    type: NodePort
+    nodePort: 30001
+
+  prometheusSpec:
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          resources:
+            requests:
+              storage: 20Gi
+
+
+grafana:
+  service:
+    type: NodePort
+    nodePort: 30000
+
+  persistence:
+    enabled: true
+    size: 5Gi
+
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          access: proxy
+          url: http://monitoring-kube-prometheus-prometheus:9090
+          isDefault: true
+
+        - name: Loki
+          type: loki
+          access: proxy
+          url: http://loki:3100
