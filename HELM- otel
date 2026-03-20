@@ -22,11 +22,13 @@ config:
         http:
 
   exporters:
-    file:
-      path: /data/output.json
+    jaeger:
+      endpoint: jaeger.monitoring.svc.cluster.local:14250
+      tls:
+        insecure: true
 
   service:
     pipelines:
       traces:
         receivers: [otlp]
-        exporters: [file]
+        exporters: [jaeger]
