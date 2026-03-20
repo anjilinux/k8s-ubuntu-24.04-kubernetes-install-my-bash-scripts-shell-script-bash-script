@@ -71,3 +71,49 @@ grafana:
           type: loki
           access: proxy
           url: http://loki:3100
+
+####################################################################################33
+alertmanager:
+  service:
+    type: NodePort
+    nodePort: 30003
+
+prometheus:
+  service:
+    type: NodePort
+    nodePort: 30001
+
+  prometheusSpec:
+    externalUrl: http://192.168.122.131:30001
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          resources:
+            requests:
+              storage: 20Gi
+
+grafana:
+  service:
+    type: NodePort
+    nodePort: 30000
+
+  persistence:
+    enabled: true
+    size: 5Gi
+
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          access: proxy
+          url: http://monitoring-kube-prometheus-prometheus:9090
+          isDefault: true
+
+        - name: Loki
+          type: loki
+          access: proxy
+          url: http://loki:3100
+          isDefault: false
+#####################################################
