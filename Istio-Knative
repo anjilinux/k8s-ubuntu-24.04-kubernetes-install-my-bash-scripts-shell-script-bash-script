@@ -1,0 +1,134 @@
+📘 Kubernetes + Istio + Knative Setup Guide
+1️⃣ Prerequisites
+Kubernetes cluster (v1.32.x)
+1 master + 2 workers
+Container runtime: containerd
+CNI: Calico
+2️⃣ Install Cert Manager
+kubectl get pods -n cert-manager
+
+✔ Ensure:
+
+cert-manager
+cert-manager-cainjector
+cert-manager-webhook → Running
+3️⃣ Install Istio
+istioctl install --set profile=demo -y
+⚠️ Fix Calico Issue
+
+Edit Felix config:
+
+kubectl edit felixconfiguration default
+
+Set:
+
+bpfConnectTimeLoadBalancing: Disabled
+
+Restart calico:
+
+kubectl delete pod -n calico-system -l k8s-app=calico-node
+✅ Verify Istio
+kubectl get pods -n istio-system
+
+✔ Expect:
+
+istiod
+istio-ingressgateway
+istio-egressgateway
+4️⃣ Install Knative Serving
+⚠️ Important Issue You Faced
+
+Latest Knative requires:
+👉 Kubernetes ≥ 1.33
+But your cluster is:
+👉 1.32
+
+✅ Solution: Use compatible version
+kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.14.0/serving-crds.yaml
+
+kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.14.0/serving-core.yaml
+5️⃣ Enable Istio Injection
+kubectl label namespace knative-serving istio-injection=enabled --overwrite
+6️⃣ Install Knative Istio Networking
+kubectl apply -f https://github.com/knative/net-istio/releases/download/knative-v1.14.0/net-istio.yaml
+✅ Verify Knative
+kubectl get pods -n knative-serving
+
+✔ All should be Running
+
+7️⃣ Deploy Sample App
+kubectl apply -f - <<EOF
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: hello
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+        - image: gcr.io/knative-samples/helloworld-go
+          env:
+            - name: TARGET
+              value: "Knative"
+EOF
+8️⃣ Get Service URL
+kubectl get ksvc hello
+
+Example:
+
+http://hello.default.<EXTERNAL-IP>.nip.io
+9️⃣ Access Application
+curl http://hello.default.<EXTERNAL-IP>.nip.io
+
+✔ Output:
+
+Hello Knative!
+🔟 Update Application (New Revision)
+kubectl edit ksvc hello
+
+Change:
+
+value: "Knative v2!"
+Verify revisions
+kubectl get revisions
+1️⃣1️⃣ Traffic Splitting
+
+Edit service:
+
+kubectl edit ksvc hello
+
+Set:
+
+traffic:
+- revisionName: hello-00001
+  percent: 50
+- revisionName: hello-00002
+  percent: 50
+Test Traffic Split
+for i in {1..10}; do
+  curl -s http://hello.default.<EXTERNAL-IP>.nip.io
+  echo
+done
+
+✔ Output:
+
+Mixed responses:
+Hello Knative!
+Hello Knative v2!
+1️⃣2️⃣ Observe Pods
+kubectl get pods -o wide
+
+✔ Both revisions running:
+
+hello-00001
+hello-00002
+1️⃣3️⃣ Key Concepts Learned
+🔹 Knative
+Revision-based deployments
+Autoscaling (including scale-to-zero)
+Traffic splitting
+🔹 Istio
+Ingress gateway
+VirtualService routing
+Traffic management
