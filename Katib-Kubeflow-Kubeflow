@@ -1,0 +1,329 @@
+Kubeflow Installation & Katib Setup Documentation
+1. Prerequisites
+
+Before starting, ensure you have:
+
+A Kubernetes cluster up and running.
+kubectl installed and configured.
+Sufficient resources (CPU, RAM, and storage).
+Persistent storage provisioner (like local-path).
+2. Prepare the Namespace
+
+Create the kubeflow namespace:
+
+kubectl create ns kubeflow
+3. Install Katib Components
+
+Katib components are installed in the following order:
+
+3.1 Namespace
+kubectl apply -k applications/katib/upstream/components/namespace
+3.2 MySQL
+kubectl apply -k applications/katib/upstream/components/mysql
+3.3 Controller
+kubectl apply -k applications/katib/upstream/components/controller
+3.4 UI
+kubectl apply -k applications/katib/upstream/components/ui
+3.5 Webhook
+kubectl apply -k applications/katib/upstream/components/webhook
+4. Install Katib using Standalone/With-Kubeflow Install Manifests
+
+There are multiple installation paths:
+
+4.1 With Kubeflow
+cd ~/kubeflow-manifests/applications/katib/upstream/installs/katib-with-kubeflow
+kubectl apply -k .
+4.2 Standalone (optional)
+cd ~/kubeflow-manifests/applications/katib/upstream/installs/katib-standalone
+kubectl apply -k .
+4.3 Standalone with Postgres (optional)
+cd ~/kubeflow-manifests/applications/katib/upstream/installs/katib-standalone-postgres
+kubectl apply -k .
+
+Note: If you face pending PVC issues (like katib-postgres), check your storage class and node availability.
+
+5. Verify Components
+
+Check pods in kubeflow namespace:
+
+kubectl get pods -n kubeflow
+
+Check PVCs:
+
+kubectl get pvc -n kubeflow
+
+Check ConfigMaps & Webhooks:
+
+kubectl get configmap katib-config -n kubeflow -o yaml
+kubectl get mutatingwebhookconfiguration katib.kubeflow.org -o yaml
+kubectl get validatingwebhookconfiguration katib.kubeflow.org -o yaml
+6. Label Namespace for Katib
+
+Katib requires metrics collector injection:
+
+kubectl label namespace kubeflow katib.kubeflow.org/metrics-collector-injection=enabled --overwrite
+
+Verify label:
+
+kubectl get ns kubeflow --show-labels
+7. Create an Example Experiment
+
+Create example-experiment.yaml with a valid trial template:
+
+apiVersion: kubeflow.org/v1beta1
+kind: Experiment
+metadata:
+  name: example-hp-tuning
+  namespace: kubeflow
+spec:
+  objective:
+    type: maximize
+    goal: 1.0
+    objectiveMetricName: accuracy
+  algorithm:
+    algorithmName: random
+  maxTrialCount: 3
+  parallelTrialCount: 1
+  parameters:
+    - name: learning-rate
+      parameterType: double
+      feasibleSpace:
+        min: "0.01"
+        max: "0.1"
+    - name: batch-size
+      parameterType: int
+      feasibleSpace:
+        min: "16"
+        max: "64"
+  trialTemplate:
+    primaryContainerName: training-container
+    successCondition: "status.succeeded > 0"
+    failureCondition: "status.failed > 0"
+    trialSpec:
+      apiVersion: batch/v1
+      kind: Job
+      spec:
+        template:
+          spec:
+            containers:
+              - name: training-container
+                image: docker.io/bitnami/tensorflow:2.13.0
+                command:
+                  - python
+                  - -c
+                  - |
+                    import os, random, time
+                    lr = float(os.environ.get("LEARNING_RATE", 0.01))
+                    bs = int(os.environ.get("BATCH_SIZE", 32))
+                    print(f"Training with lr={lr}, batch_size={bs}")
+                    time.sleep(random.randint(5,10))
+                    print("accuracy:", random.random())
+                env:
+                  - name: LEARNING_RATE
+                    value: "{{trialParameters.learning-rate}}"
+                  - name: BATCH_SIZE
+                    value: "{{trialParameters.batch-size}}"
+            restartPolicy: Never
+    trialParameters:
+      - name: learning-rate
+        description: Learning rate
+        reference: learning-rate
+      - name: batch-size
+        description: Batch size
+        reference: batch-size
+
+Apply the experiment:
+
+kubectl apply -f example-experiment.yaml -n kubeflow
+8. Verify Experiment & Trials
+kubectl get experiments -n kubeflow
+kubectl get trials -n kubeflow
+kubectl get pods -n kubeflow -l experiment=example-hp-tuning -w
+9. Troubleshooting Tips
+PVC Pending
+Ensure storage class exists and nodes have enough capacity.
+Check WaitForFirstConsumer events.
+Webhook Denials
+Ensure namespace is labeled correctly.
+Ensure trialParameters names match exactly in trialTemplate.
+Katib Pods Not Running
+Check kubectl describe pod <pod> -n kubeflow
+Look for webhook connection errors.
+
+If you want, I can make a fully formatted PDF/Markdown document with all commands, notes, and examples in one clean file ready to use as official documentation for yourself.
+
+Do you want me to do that?
+
+u not given proper steps -u missing --- i want clear way from starting  documention 
+
+Got it! Let’s create a full, clear step-by-step Kubeflow + Katib installation guide, starting from a fresh environment. I’ll include all the steps you did, along with proper notes for issues, labels, PVCs, and experiment creation. I’ll make it structured for documentation purposes.
+
+Kubeflow Installation and Katib Setup Guide
+1. Prerequisites
+
+Before you start, ensure you have:
+
+Kubernetes cluster running (v1.23+ recommended).
+kubectl installed and configured.
+Minimum resources: 4 CPUs, 8GB RAM, 20GB storage.
+Persistent volume provisioner (like local-path) configured.
+
+Check cluster:
+
+kubectl get nodes
+kubectl version --short
+2. Clone Kubeflow Manifests
+git clone https://github.com/kubeflow/manifests.git ~/kubeflow-manifests
+cd ~/kubeflow-manifests
+3. Create Kubeflow Namespace
+kubectl create ns kubeflow --dry-run=client -o yaml | kubectl apply -f -
+
+Verify:
+
+kubectl get ns kubeflow --show-labels
+4. Install Katib Components (from manifests)
+4.1 Namespace
+kubectl apply -k applications/katib/upstream/components/namespace
+4.2 MySQL
+kubectl apply -k applications/katib/upstream/components/mysql
+4.3 Controller
+kubectl apply -k applications/katib/upstream/components/controller
+4.4 UI
+kubectl apply -k applications/katib/upstream/components/ui
+4.5 Webhook
+kubectl apply -k applications/katib/upstream/components/webhook
+
+Check pods:
+
+kubectl get pods -n kubeflow
+
+⚠ Note: If katib-controller pods don’t appear, check PVC and webhook errors.
+
+5. Choose Katib Installation Type
+
+You can install Katib with Kubeflow or standalone:
+
+5.1 Katib with Kubeflow
+cd ~/kubeflow-manifests/applications/katib/upstream/installs/katib-with-kubeflow
+kubectl apply -k .
+5.2 Katib Standalone
+cd ~/kubeflow-manifests/applications/katib/upstream/installs/katib-standalone
+kubectl apply -k .
+5.3 Standalone with Postgres
+cd ~/kubeflow-manifests/applications/katib/upstream/installs/katib-standalone-postgres
+kubectl apply -k .
+
+Check pods and PVCs:
+
+kubectl get pods -n kubeflow
+kubectl get pvc -n kubeflow
+6. Label Namespace for Metrics Collector
+
+Katib requires the namespace to be labeled for metrics injection:
+
+kubectl label namespace kubeflow katib.kubeflow.org/metrics-collector-injection=enabled --overwrite
+kubectl get ns kubeflow --show-labels
+7. Verify Katib Config
+
+Check ConfigMap:
+
+kubectl get configmap katib-config -n kubeflow -o yaml
+
+Check Webhooks:
+
+kubectl get mutatingwebhookconfiguration katib.kubeflow.org -o yaml
+kubectl get validatingwebhookconfiguration katib.kubeflow.org -o yaml
+8. Create a Sample Experiment
+
+Create example-experiment.yaml:
+
+apiVersion: kubeflow.org/v1beta1
+kind: Experiment
+metadata:
+  name: example-hp-tuning
+  namespace: kubeflow
+spec:
+  objective:
+    type: maximize
+    goal: 1.0
+    objectiveMetricName: accuracy
+  algorithm:
+    algorithmName: random
+  maxTrialCount: 3
+  parallelTrialCount: 1
+  parameters:
+    - name: learning-rate
+      parameterType: double
+      feasibleSpace:
+        min: "0.01"
+        max: "0.1"
+    - name: batch-size
+      parameterType: int
+      feasibleSpace:
+        min: "16"
+        max: "64"
+  trialTemplate:
+    primaryContainerName: training-container
+    successCondition: "status.succeeded > 0"
+    failureCondition: "status.failed > 0"
+    trialSpec:
+      apiVersion: batch/v1
+      kind: Job
+      spec:
+        template:
+          spec:
+            containers:
+              - name: training-container
+                image: docker.io/bitnami/tensorflow:2.13.0
+                command:
+                  - python
+                  - -c
+                  - |
+                    import os, random, time
+                    lr = float(os.environ.get("LEARNING_RATE", 0.01))
+                    bs = int(os.environ.get("BATCH_SIZE", 32))
+                    print(f"Training with lr={lr}, batch_size={bs}")
+                    time.sleep(random.randint(5,10))
+                    print("accuracy:", random.random())
+                env:
+                  - name: LEARNING_RATE
+                    value: "{{trialParameters.learning-rate}}"
+                  - name: BATCH_SIZE
+                    value: "{{trialParameters.batch-size}}"
+            restartPolicy: Never
+    trialParameters:
+      - name: learning-rate
+        description: Learning rate
+        reference: learning-rate
+      - name: batch-size
+        description: Batch size
+        reference: batch-size
+
+Apply experiment:
+
+kubectl apply -f example-experiment.yaml -n kubeflow
+9. Verify Experiments and Trials
+kubectl get experiments -n kubeflow
+kubectl get trials -n kubeflow
+kubectl get pods -n kubeflow -l experiment=example-hp-tuning -w
+10. Common Issues & Fixes
+Webhook Denials
+
+Ensure namespace is labeled correctly:
+
+kubectl label namespace kubeflow katib.kubeflow.org/metrics-collector-injection=enabled --overwrite
+Ensure trialParameters names match exactly with trialTemplate env references.
+PVC Pending
+Ensure your storage class exists and nodes have capacity.
+If using WaitForFirstConsumer, ensure pods can schedule to a node.
+Katib Controller Not Running
+
+Check logs:
+
+kubectl logs -n kubeflow deployment/katib-controller
+
+Check for webhook errors:
+
+kubectl get events -n kubeflow --sort-by=.metadata.creationTimestamp
+
+This document captures all the steps from a fresh install to running a sample Katib experiment, including the troubleshooting notes you encountered.
