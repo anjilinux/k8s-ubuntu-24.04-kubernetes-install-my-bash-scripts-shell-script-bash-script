@@ -1,0 +1,204 @@
+📘 Kubeflow Setup Guide (End-to-End)
+🧱 1. Prerequisites
+Infrastructure
+3 VMs:
+1 Master (Control Plane)
+2 Workers
+OS: Ubuntu 22.04 / 24.04
+Required Setup
+Kubernetes (kubeadm)
+Container runtime: containerd
+CNI: Calico
+Verify Cluster
+kubectl get nodes -o wide
+
+✔ Output:
+
+master    Ready
+worker1   Ready
+worker2   Ready
+📦 2. Clone Kubeflow Manifests
+git clone https://github.com/kubeflow/manifests.git
+cd manifests
+
+(Optional – recommended stable version)
+
+git checkout v1.9.0
+⚙️ 3. Install Kubeflow (Correct Method)
+
+❗ IMPORTANT: Do NOT use kubectl apply -k .
+
+✅ Use this command:
+while ! kustomize build example | kubectl apply -f -; do
+  echo "Retrying..."
+  sleep 10
+done
+⏳ Installation Time
+20 – 40 minutes
+🔁 What happens during install
+Some resources fail initially ❗
+Webhooks not ready ❗
+CRDs missing ❗
+
+✔ Loop retries until everything succeeds
+
+🔍 4. Monitor Installation
+kubectl get pods -A -w
+⚠️ 5. Fix Common CrashLoop Issues
+
+After install, some pods may fail (common in local setups).
+
+🔧 Scale down problematic components
+# Knative
+kubectl scale deployment net-istio-controller -n knative-serving --replicas=0
+kubectl scale deployment net-istio-webhook -n knative-serving --replicas=0
+
+# Spark
+kubectl scale deployment spark-operator-webhook -n kubeflow --replicas=0
+
+# Metadata
+kubectl scale deployment metadata-grpc-deployment -n kubeflow --replicas=0
+kubectl scale deployment metadata-writer -n kubeflow --replicas=0
+
+# Training controllers
+kubectl scale deployment kubeflow-trainer-controller-manager -n kubeflow-system --replicas=0
+kubectl scale deployment jobset-controller-manager -n kubeflow-system --replicas=0
+
+# LLM controller
+kubectl scale deployment llmisvc-controller-manager -n kubeflow --replicas=0
+✅ Verify
+kubectl get pods -A | grep CrashLoopBackOff
+
+✔ Output should be empty
+
+🌐 6. Access Kubeflow Dashboard
+Check Istio Gateway
+kubectl get svc -n istio-system istio-ingressgateway
+Port-forward (on master)
+kubectl port-forward svc/istio-ingressgateway -n istio-system 8085:80
+💻 7. Access from Local Machine
+
+If using remote VM:
+
+ssh -L 8085:localhost:8085 user@MASTER_IP
+Open browser:
+http://localhost:8085
+🔐 8. Login
+
+Click:
+👉 Sign in with Dex
+
+Default credentials:
+
+Email: user@example.com
+Password: 12341234
+📊 9. Kubeflow Dashboard
+
+You will see:
+
+Notebooks
+Pipelines
+Experiments
+Volumes
+📓 10. Create Notebook
+
+Go to:
+👉 Notebooks → New Notebook
+
+Fill Details
+Field	Value
+Name	my-test-nb
+Image	jupyter-scipy:v1.10.0
+CPU	0.5
+Memory	1Gi
+GPU	None
+
+Click Create
+
+⏳ 11. Wait for Notebook Pod
+kubectl get pods -n kubeflow-user-example-com
+Wait until:
+2/2 Running
+🔗 12. Open Notebook
+
+👉 Go to:
+Kubeflow Dashboard → Notebooks
+
+👉 Click:
+
+CONNECT
+
+⚠️ IMPORTANT:
+
+Do NOT manually open /notebook URL
+🧪 13. JupyterLab Opens
+
+You will see:
+
+Python 3 (ipykernel)
+Terminal
+File browser
+▶️ 14. Run First Notebook
+
+Click:
+👉 Python 3 (ipykernel)
+
+Run:
+
+print("Kubeflow is working 🚀")
+📁 15. Storage
+
+Notebook uses:
+
+Persistent Volume (PVC)
+
+Mounted at:
+
+/home/jovyan
+📊 16. Final Output (Expected)
+
+On Notebooks page:
+
+Status: Running ✅
+Name: my-test-nb
+Image: jupyter-scipy:v1.10.0
+CPU: 0.5
+Memory: 1.0 Gi
+🧰 17. Troubleshooting
+Check all pods
+kubectl get pods -A
+Describe pod
+kubectl describe pod <pod> -n <namespace>
+Logs
+kubectl logs <pod> -n <namespace>
+Common Issues
+Issue	Solution
+CrashLoopBackOff	Scale down components
+Notebook stuck	Wait for image pull
+Page not found	Use CONNECT button
+Connection refused	Fix port-forward
+🚀 18. Production Notes
+Use instead of port-forward:
+LoadBalancer (MetalLB)
+Ingress + domain
+Enable:
+HTTPS (cert-manager)
+OAuth (Dex)
+Storage:
+NFS / Ceph / Cloud storage
+Avoid in production:
+Do NOT permanently scale down components
+📌 Final Workflow
+Setup Cluster
+→ Clone Manifests
+→ Install (kustomize loop)
+→ Fix Pods
+→ Port Forward
+→ Login
+→ Create Notebook
+→ CONNECT
+→ Run Code
+🎉 DONE
+
+You now have a complete reusable Kubeflow deployment guide
+—from zero → running notebook ✔️
